@@ -140,7 +140,7 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
 .detail-close:hover{background:#21262d;color:#e6edf3;border-color:#484f58}
 .detail-title{font-size:22px;font-weight:700;color:#e6edf3;margin-bottom:4px;padding-right:40px}
 .detail-type{font-size:12px;color:#7d8590;text-transform:uppercase;letter-spacing:.5px}
-.detail-body{padding:24px}
+.detail-body{padding:0}
 .detail-section{margin-bottom:24px}
 .detail-section h3{font-size:12px;font-weight:600;color:#7d8590;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
 .detail-section p{font-size:14px;color:#e6edf3;line-height:1.6}
@@ -168,6 +168,94 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
 .detail-meta-row:last-child{border-bottom:none}
 .detail-meta-row .label{color:#7d8590}
 .detail-meta-row .value{color:#e6edf3;text-align:right;max-width:60%}
+
+/* ── Detail Panel Tabs ───────────────────────── */
+.detail-tabs{display:flex;gap:0;border-bottom:1px solid #21262d;padding:0 24px;background:#161b22;position:sticky;top:0;z-index:2}
+.detail-tab{padding:10px 16px;font-size:13px;font-weight:500;color:#7d8590;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.detail-tab:hover{color:#e6edf3}
+.detail-tab.active{color:#e6edf3;border-bottom-color:#4f8fff}
+.detail-tab-content{display:none;padding:24px;animation:fadeInTab .25s ease}
+.detail-tab-content.active{display:block}
+@keyframes fadeInTab{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Large status badge */
+.status-badge-lg{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:24px;font-size:14px;font-weight:600;margin-bottom:16px}
+.status-badge-lg.green{background:rgba(63,185,80,.12);color:#3fb950}
+.status-badge-lg.yellow{background:rgba(210,153,34,.12);color:#d29922}
+.status-badge-lg.gray{background:rgba(72,79,88,.2);color:#7d8590}
+.status-badge-lg.blue{background:rgba(79,143,255,.12);color:#4f8fff}
+.status-badge-lg.red{background:rgba(248,81,73,.12);color:#f85149}
+.status-dot-lg{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.status-dot-lg.green{background:#3fb950}
+.status-dot-lg.yellow{background:#d29922}
+.status-dot-lg.gray{background:#484f58}
+.status-dot-lg.blue{background:#4f8fff}
+.status-dot-lg.red{background:#f85149}
+
+/* What This Does box */
+.what-this-does{background:rgba(79,143,255,.04);border:1px solid rgba(79,143,255,.15);border-radius:10px;padding:14px 16px;font-size:13px;color:#c9d1d9;line-height:1.65;margin-bottom:16px}
+
+/* Stat grid */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat-card{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:10px;text-align:center}
+.stat-value{font-size:20px;font-weight:700;color:#e6edf3}
+.stat-label{font-size:11px;color:#7d8590;margin-top:2px}
+
+/* Timeline for commits */
+.commit-timeline{list-style:none;padding:0;margin:0}
+.commit-item{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid #21262d}
+.commit-item:last-child{border-bottom:none}
+.commit-avatar{width:28px;height:28px;border-radius:50%;background:#30363d;display:flex;align-items:center;justify-content:center;font-size:12px;color:#7d8590;flex-shrink:0;font-weight:600;text-transform:uppercase}
+.commit-msg{font-size:12px;color:#e6edf3;line-height:1.4;word-break:break-word}
+.commit-meta{font-size:11px;color:#7d8590;margin-top:2px}
+.commit-info{flex:1;min-width:0}
+
+/* PR cards */
+.pr-card{padding:10px;background:#0d1117;border:1px solid #21262d;border-radius:8px;margin-bottom:8px;cursor:default}
+.pr-card:last-child{margin-bottom:0}
+.pr-title{font-size:12px;color:#e6edf3;font-weight:500;line-height:1.4;margin-bottom:6px}
+.pr-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:#7d8590;flex-wrap:wrap}
+.pr-status{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.pr-status.completed{background:rgba(137,87,229,0.2);color:#a371f7}
+.pr-status.active{background:rgba(63,185,80,0.2);color:#3fb950}
+.pr-status.abandoned{background:rgba(248,81,73,0.2);color:#f85149}
+.pr-comments{font-size:11px;color:#7d8590}
+.pr-thread-list{margin-top:8px;padding-top:8px;border-top:1px solid #21262d;display:none}
+.pr-thread-list.expanded{display:block}
+.pr-thread-item{font-size:11px;color:#7d8590;padding:4px 0;border-bottom:1px solid rgba(33,38,45,.5);line-height:1.4}
+.pr-thread-item:last-child{border-bottom:none}
+.pr-expand-btn{font-size:11px;color:#4f8fff;background:none;border:none;cursor:pointer;padding:0;margin-top:4px}
+.pr-expand-btn:hover{text-decoration:underline}
+
+/* Work item badges */
+.wi-card{padding:10px;background:#0d1117;border:1px solid #21262d;border-radius:8px;margin-bottom:6px;font-size:12px}
+.wi-card:last-child{margin-bottom:0}
+.wi-header{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.wi-id{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;font-size:11px;color:#7d8590}
+.wi-title{font-size:12px;color:#e6edf3;flex:1;min-width:0}
+.wi-meta{font-size:11px;color:#7d8590}
+.wi-state{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.wi-state.in-progress{background:rgba(79,143,255,0.2);color:#4f8fff}
+.wi-state.ready-test{background:rgba(137,87,229,0.2);color:#a371f7}
+.wi-state.ready-dev{background:rgba(125,133,144,0.2);color:#7d8590}
+
+/* Tech tags */
+.tech-tag{display:inline-block;padding:2px 8px;background:rgba(79,143,255,0.1);border:1px solid rgba(79,143,255,0.3);border-radius:12px;font-size:11px;color:#4f8fff;margin:2px}
+
+/* Enrichment not available message */
+.enrich-notice{background:rgba(210,153,34,.06);border:1px solid rgba(210,153,34,.2);border-radius:8px;padding:16px;font-size:13px;color:#d29922;line-height:1.5;text-align:center}
+.enrich-notice code{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:rgba(210,153,34,.1);padding:2px 6px;border-radius:4px;font-size:12px}
+
+/* Connection list for architecture tab */
+.conn-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #21262d;font-size:12px;color:#e6edf3}
+.conn-item:last-child{border-bottom:none}
+.conn-direction{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;text-transform:uppercase;flex-shrink:0}
+.conn-direction.inbound{background:rgba(63,185,80,.12);color:#3fb950}
+.conn-direction.outbound{background:rgba(79,143,255,.12);color:#4f8fff}
+.conn-desc{color:#7d8590;font-size:11px;margin-left:auto;text-align:right;flex-shrink:0;max-width:160px}
+
+/* API endpoint mono */
+.api-endpoint{font-family:'SF Mono',SFMono-Regular,Consolas,monospace;font-size:12px;color:#e6edf3;padding:4px 8px;background:#0d1117;border:1px solid #21262d;border-radius:6px;margin-bottom:4px;display:block}
 
 /* ── Flow Controls ────────────────────────────── */
 #flow-controls{position:fixed;bottom:0;left:0;right:0;background:rgba(22,27,34,.95);backdrop-filter:blur(12px);border-top:1px solid #30363d;padding:16px 32px;z-index:100;display:none;align-items:center;gap:16px}
@@ -636,6 +724,313 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
     });
   }
 
+  /* ── Plain-English Explanations ──────────────── */
+  var WHAT_THIS_DOES = {
+    rpm_client: "This is the web application that insurance brokers use. They fill out forms with customer details, select which insurance companies to get quotes from, and submit. Built with Microsoft's Blazor framework - think of it as the 'front desk' of the system.",
+    bff: "The Backend-for-Frontend sits between the web app and all backend services. Every API call from the browser goes through here first. It handles authentication, routes requests to the right service, and adds security headers. Think of it as a 'receptionist' that checks your ID before letting you through.",
+    quote_mgmt: "The Quote Management service is the brain of the quoting process. When a broker submits a quote, this service creates a record, saves it to the database, figures out which insurance carriers need to be contacted, and drops a message on the queue for processing. It's the coordinator.",
+    service_bus: "Azure Service Bus is a message queue - like a to-do list for the system. When Quote Management says 'rate this quote', it puts a message here. The Orchestrator picks it up when ready. This decouples the services so they can work independently and handle high load.",
+    orchestrator: "The Rating Orchestrator is a background worker that watches the message queue. When a new rating request arrives, it saves a backup copy, then fans it out - creating separate tasks for each insurance carrier that needs to quote. It's the dispatcher.",
+    carrier_connector: "The Carrier Connector talks to actual insurance companies. It takes the internal JSON data, translates it to CSIO XML (the industry standard format), and sends it to carriers like Aviva, SGI, or Peace Hills via their APIs. Currently has a built-in premium simulator for testing.",
+    manufacture: "The Manufactured Rating Engine would apply in-house rating rules to calculate premiums WITHOUT calling an external carrier. This is for products where Rival sets the rates directly. Currently has ZERO code - just an empty infrastructure placeholder.",
+    schema_cache: "The Schema Cache manages the rules and configurations that define how quoting works - what fields to show, what validations to apply, what mappings to use for each carrier. It's the 'rulebook' of the system, backed by MongoDB.",
+    platform_config: "Platform Configuration stores tenant settings, firm details, and carrier credentials. It's a supporting service that other services call to get configuration data.",
+    apim: "Azure API Management would be the front gate for all external API traffic - handling authentication, rate limiting, and routing. It's a critical piece that is NOT YET PROVISIONED in the infrastructure."
+  };
+
+  /* ── Enrichment Data Helpers ───────────────────── */
+  function getEnrichment(id) {
+    if (window.ARCH_DATA && window.ARCH_DATA.enrichment && window.ARCH_DATA.enrichment.services) {
+      return window.ARCH_DATA.enrichment.services[id] || null;
+    }
+    return null;
+  }
+
+  function relativeDate(dateStr) {
+    if (!dateStr) return '';
+    var then = new Date(dateStr);
+    var now  = new Date();
+    var diff = Math.floor((now - then) / 1000);
+    if (isNaN(diff)) return dateStr;
+    if (diff < 60)    return 'just now';
+    if (diff < 3600)  return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    var days = Math.floor(diff / 86400);
+    if (days < 30) return days + 'd ago';
+    if (days < 365) return Math.floor(days / 30) + 'mo ago';
+    return Math.floor(days / 365) + 'y ago';
+  }
+
+  function getWiStateClass(state) {
+    if (!state) return 'ready-dev';
+    var s = state.toLowerCase();
+    if (s.indexOf('in progress') >= 0 || s === 'active') return 'in-progress';
+    if (s.indexOf('testing') >= 0 || s.indexOf('review') >= 0) return 'ready-test';
+    return 'ready-dev';
+  }
+
+  function getPrStatusClass(status) {
+    if (!status) return 'active';
+    var s = status.toLowerCase();
+    if (s === 'completed' || s === 'merged') return 'completed';
+    if (s === 'abandoned') return 'abandoned';
+    return 'active';
+  }
+
+  function getPrStatusLabel(status) {
+    if (!status) return 'Active';
+    var s = status.toLowerCase();
+    if (s === 'completed' || s === 'merged') return 'Merged';
+    if (s === 'abandoned') return 'Abandoned';
+    return 'Active';
+  }
+
+  /* ── Build Overview Tab ────────────────────────── */
+  function buildOverviewTab(id, nd, meta, st) {
+    var html = '';
+
+    /* Status badge (large) */
+    if (st) {
+      var sc = getStatusClass(st);
+      var sl = getStatusLabel(st);
+      html += '<div class="status-badge-lg ' + sc + '"><span class="status-dot-lg ' + sc + '"></span>' + esc(sl) + '</div>';
+    }
+
+    /* Description */
+    if (meta.description) {
+      html += '<div class="detail-section"><p>' + esc(meta.description) + '</p></div>';
+    }
+
+    /* Blocker */
+    if (st && st.blocker) {
+      html += '<div class="detail-section"><div class="blocker-box">\u26A0 ' + esc(st.blocker) + '</div></div>';
+    }
+
+    /* What This Does */
+    if (WHAT_THIS_DOES[id]) {
+      html += '<div class="detail-section"><h3>What This Does</h3><div class="what-this-does">' + esc(WHAT_THIS_DOES[id]) + '</div></div>';
+    }
+
+    /* Key Stats */
+    var enrichment = getEnrichment(id);
+    var fileCount = (meta.files != null) ? meta.files : (enrichment && enrichment.files != null ? enrichment.files : '\u2014');
+    var commitCount = (st && st.commits) ? st.commits : (enrichment && enrichment.commitCount != null ? enrichment.commitCount : '\u2014');
+    var contribCount = (meta.contributors && meta.contributors.length) ? meta.contributors.length : (enrichment && enrichment.contributorCount != null ? enrichment.contributorCount : '\u2014');
+    var lastActive = (st && st.lastCommit) ? st.lastCommit : (enrichment && enrichment.lastActive ? relativeDate(enrichment.lastActive) : '\u2014');
+
+    html += '<div class="detail-section"><h3>Key Stats</h3><div class="stat-grid">' +
+      '<div class="stat-card"><div class="stat-value">' + esc(String(fileCount)) + '</div><div class="stat-label">Files</div></div>' +
+      '<div class="stat-card"><div class="stat-value">' + esc(String(commitCount)) + '</div><div class="stat-label">Commits</div></div>' +
+      '<div class="stat-card"><div class="stat-value">' + esc(String(contribCount)) + '</div><div class="stat-label">Contributors</div></div>' +
+      '<div class="stat-card"><div class="stat-value" style="font-size:14px">' + esc(String(lastActive)) + '</div><div class="stat-label">Last Active</div></div>' +
+      '</div></div>';
+
+    /* Meta info table */
+    html += '<div class="detail-section"><h3>Details</h3>';
+    var owner = meta.owner || (st && st.owner) || '';
+    if (owner) {
+      html += '<div class="detail-meta-row"><span class="label">Owner</span><span class="value">' + esc(owner) + '</span></div>';
+    }
+    if (meta.team) {
+      html += '<div class="detail-meta-row"><span class="label">Team</span><span class="value">' + esc(meta.team) + '</span></div>';
+    }
+    if (meta.repo) {
+      html += '<div class="detail-meta-row"><span class="label">Repository</span><span class="value" style="font-family:monospace;font-size:12px">' + esc(meta.repo) + '</span></div>';
+    }
+    if (meta.repoUrl) {
+      html += '<div class="detail-meta-row"><span class="label">Repo Link</span><span class="value"><a class="detail-link" href="' + esc(meta.repoUrl) + '" target="_blank" rel="noopener">Open in Azure DevOps \u2197</a></span></div>';
+    }
+    if (st) {
+      html += '<div class="detail-meta-row"><span class="label">CI Pipeline</span><span class="value">' + (st.ciPipeline ? '\u2705 Yes' : '\u274C No') + '</span></div>';
+      html += '<div class="detail-meta-row"><span class="label">Deployed</span><span class="value">' + (st.deployed ? '\u2705 Yes' : '\u274C No') + '</span></div>';
+    }
+    if (meta.contributors && meta.contributors.length) {
+      html += '<div class="detail-meta-row"><span class="label">Contributors</span><span class="value">' + esc(meta.contributors.join(', ')) + '</span></div>';
+    }
+    html += '</div>';
+
+    return html;
+  }
+
+  /* ── Build Activity Tab ────────────────────────── */
+  function buildActivityTab(id) {
+    var enrichment = getEnrichment(id);
+    if (!enrichment) {
+      return '<div class="enrich-notice">Run <code>node enrich-data.js</code> to pull live activity from Azure DevOps</div>';
+    }
+
+    var html = '';
+
+    /* Recent Commits */
+    var commits = enrichment.commits || [];
+    if (commits.length) {
+      html += '<div class="detail-section"><h3>Recent Commits</h3><div class="commit-timeline">';
+      commits.slice(0, 10).forEach(function (c) {
+        var authorName = c.author || c.authorName || 'Unknown';
+        var initial = authorName.charAt(0).toUpperCase();
+        var msg = c.message || c.comment || '';
+        var firstLine = msg.split('\n')[0];
+        var date = relativeDate(c.date || c.authorDate);
+        html += '<div class="commit-item">' +
+          '<div class="commit-avatar">' + esc(initial) + '</div>' +
+          '<div class="commit-info">' +
+            '<div class="commit-msg">' + esc(firstLine) + '</div>' +
+            '<div class="commit-meta">' + esc(authorName) + ' \u00B7 ' + esc(date) + '</div>' +
+          '</div></div>';
+      });
+      html += '</div></div>';
+    } else {
+      html += '<div class="detail-section"><h3>Recent Commits</h3><p style="font-size:13px;color:#7d8590">No commit data available.</p></div>';
+    }
+
+    /* Pull Requests */
+    var prs = enrichment.pullRequests || [];
+    if (prs.length) {
+      html += '<div class="detail-section"><h3>Pull Requests</h3>';
+      prs.slice(0, 5).forEach(function (pr, idx) {
+        var statusClass = getPrStatusClass(pr.status);
+        var statusLabel = getPrStatusLabel(pr.status);
+        var author = pr.author || pr.createdBy || '';
+        var date = relativeDate(pr.date || pr.creationDate || pr.closedDate);
+        var threadCount = pr.commentCount || pr.threads || 0;
+        var threads = pr.threadExcerpts || pr.comments || [];
+
+        html += '<div class="pr-card">' +
+          '<div class="pr-title">' + esc(pr.title || 'Untitled PR') + '</div>' +
+          '<div class="pr-meta">' +
+            '<span class="pr-status ' + statusClass + '">' + esc(statusLabel) + '</span>' +
+            '<span>' + esc(author) + '</span>' +
+            '<span>' + esc(date) + '</span>' +
+            (threadCount > 0 ? '<span class="pr-comments">\uD83D\uDCAC ' + threadCount + ' comment' + (threadCount > 1 ? 's' : '') + '</span>' : '') +
+          '</div>';
+
+        if (threads.length > 0) {
+          html += '<button class="pr-expand-btn" onclick="this.nextElementSibling.classList.toggle(\'expanded\');this.textContent=this.nextElementSibling.classList.contains(\'expanded\')?\'Hide comments\':\'Show comments\'">Show comments</button>';
+          html += '<div class="pr-thread-list">';
+          threads.forEach(function (t) {
+            var content = typeof t === 'string' ? t : (t.content || t.text || '');
+            html += '<div class="pr-thread-item">' + esc(content) + '</div>';
+          });
+          html += '</div>';
+        }
+
+        html += '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="detail-section"><h3>Pull Requests</h3><p style="font-size:13px;color:#7d8590">No pull request data available.</p></div>';
+    }
+
+    /* Active Work Items */
+    var workItems = enrichment.workItems || [];
+    if (workItems.length) {
+      html += '<div class="detail-section"><h3>Active Work Items</h3>';
+      workItems.forEach(function (wi) {
+        var stateClass = getWiStateClass(wi.state);
+        html += '<div class="wi-card">' +
+          '<div class="wi-header">' +
+            '<span class="wi-id">#' + esc(String(wi.id || '')) + '</span>' +
+            '<span class="wi-state ' + stateClass + '">' + esc(wi.state || 'Unknown') + '</span>' +
+          '</div>' +
+          '<div class="wi-title">' + esc(wi.title || 'Untitled') + '</div>' +
+          (wi.assignedTo ? '<div class="wi-meta">Assigned to: ' + esc(wi.assignedTo) + '</div>' : '') +
+          '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="detail-section"><h3>Active Work Items</h3><p style="font-size:13px;color:#7d8590">No work item data available.</p></div>';
+    }
+
+    return html;
+  }
+
+  /* ── Build Architecture Tab ────────────────────── */
+  function buildArchitectureTab(id, nd, meta, st) {
+    var html = '';
+
+    /* Internal Components */
+    var children = childrenOf(id);
+    if (children.length) {
+      html += '<div class="detail-section"><h3>Internal Components</h3>';
+      children.forEach(function (c) {
+        var cm = metaFor(c.data.id);
+        html += '<div class="sub-component"><strong>' + esc(c.data.label) + '</strong>' +
+                '<div class="sc-type">' + esc(c.data.type) + '</div>' +
+                (cm.description ? '<div class="sc-desc">' + esc(cm.description) + '</div>' : '') +
+                '</div>';
+      });
+      html += '</div>';
+    }
+
+    /* Connections - from edges AND supporting connections */
+    var edges    = edgesForNode(id);
+    var inbound  = edges.filter(function (e) { return e.data.target === id; });
+    var outbound = edges.filter(function (e) { return e.data.source === id; });
+
+    SUPPORTING_CONNECTIONS.forEach(function (conn) {
+      if (conn.to === id) {
+        var alreadyHas = inbound.some(function (e) { return e.data.source === conn.from; });
+        if (!alreadyHas) {
+          inbound.push({ data: { source: conn.from, target: conn.to, label: conn.label } });
+        }
+      }
+      if (conn.from === id) {
+        var alreadyHas2 = outbound.some(function (e) { return e.data.target === conn.to; });
+        if (!alreadyHas2) {
+          outbound.push({ data: { source: conn.from, target: conn.to, label: conn.label } });
+        }
+      }
+    });
+
+    if (inbound.length || outbound.length) {
+      html += '<div class="detail-section"><h3>Connections</h3>';
+      inbound.forEach(function (e) {
+        var src = nodeById(e.data.source);
+        html += '<div class="conn-item"><span class="conn-direction inbound">IN</span> Receives from <strong>' + esc(src ? src.data.label : e.data.source) + '</strong>' +
+                '<span class="conn-desc">' + esc(e.data.label) + '</span></div>';
+      });
+      outbound.forEach(function (e) {
+        var tgt = nodeById(e.data.target);
+        html += '<div class="conn-item"><span class="conn-direction outbound">OUT</span> Sends to <strong>' + esc(tgt ? tgt.data.label : e.data.target) + '</strong>' +
+                '<span class="conn-desc">' + esc(e.data.label) + '</span></div>';
+      });
+      html += '</div>';
+    }
+
+    /* Tech Stack as colored tag pills */
+    if (meta.tech && meta.tech.length) {
+      html += '<div class="detail-section"><h3>Tech Stack</h3><div>';
+      meta.tech.forEach(function (t) { html += '<span class="tech-tag">' + esc(t) + '</span>'; });
+      html += '</div></div>';
+    }
+
+    /* API Endpoints */
+    if (meta.endpoints && meta.endpoints.length) {
+      html += '<div class="detail-section"><h3>API Endpoints</h3>';
+      meta.endpoints.forEach(function (ep) {
+        html += '<span class="api-endpoint">' + esc(ep) + '</span>';
+      });
+      html += '</div>';
+    }
+
+    /* Queues (for service_bus) */
+    if (meta.queues && meta.queues.length) {
+      html += '<div class="detail-section"><h3>Queues</h3>';
+      meta.queues.forEach(function (q) {
+        var pub = nodeById(q.publisher);
+        var con = nodeById(q.consumer);
+        html += '<div class="sub-component">' +
+                '<strong style="font-family:monospace;font-size:12px">' + esc(q.name) + '</strong>' +
+                '<div class="sc-desc">' +
+                esc(pub ? pub.data.label : '?') + ' \u2192 ' + esc(con ? con.data.label : '?') +
+                '</div></div>';
+      });
+      html += '</div>';
+    }
+
+    return html;
+  }
+
   /* ── Show Detail Panel ────────────────────────── */
   function showDetail(id) {
     var node = nodeById(id);
@@ -653,118 +1048,32 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
     var body = document.getElementById('detail-body');
     var html = '';
 
-    /* Status badge */
-    if (st) {
-      var sc = getStatusClass(st);
-      var sl = getStatusLabel(st);
-      html += '<div class="detail-section"><h3>Status</h3><span class="detail-badge ' + sc + '">\u25CF ' + esc(sl) + '</span></div>';
-    }
+    /* Tabs row */
+    html += '<div class="detail-tabs">' +
+      '<button class="detail-tab active" data-detail-tab="overview">Overview</button>' +
+      '<button class="detail-tab" data-detail-tab="activity">Activity</button>' +
+      '<button class="detail-tab" data-detail-tab="architecture">Architecture</button>' +
+      '</div>';
 
-    /* Description */
-    if (meta.description) {
-      html += '<div class="detail-section"><h3>What It Does</h3><p>' + esc(meta.description) + '</p></div>';
-    }
-
-    /* Blocker */
-    if (st && st.blocker) {
-      html += '<div class="detail-section"><h3>Blockers</h3><div class="blocker-box">' + esc(st.blocker) + '</div></div>';
-    }
-
-    /* Connections */
-    var edges   = edgesForNode(id);
-    var inbound = edges.filter(function (e) { return e.data.target === id; });
-    var outbound= edges.filter(function (e) { return e.data.source === id; });
-    if (inbound.length || outbound.length) {
-      html += '<div class="detail-section"><h3>Connections</h3><ul class="detail-list">';
-      inbound.forEach(function (e) {
-        var src = nodeById(e.data.source);
-        html += '<li><span class="conn-dir in">IN</span> ' + esc(src ? src.data.label : e.data.source) +
-                '<span class="conn-label">' + esc(e.data.label) + '</span></li>';
-      });
-      outbound.forEach(function (e) {
-        var tgt = nodeById(e.data.target);
-        html += '<li><span class="conn-dir out">OUT</span> ' + esc(tgt ? tgt.data.label : e.data.target) +
-                '<span class="conn-label">' + esc(e.data.label) + '</span></li>';
-      });
-      html += '</ul></div>';
-    }
-
-    /* Internal components */
-    var children = childrenOf(id);
-    if (children.length) {
-      html += '<div class="detail-section"><h3>Internal Components</h3>';
-      children.forEach(function (c) {
-        var cm = metaFor(c.data.id);
-        html += '<div class="sub-component"><strong>' + esc(c.data.label) + '</strong>' +
-                '<div class="sc-type">' + esc(c.data.type) + '</div>' +
-                (cm.description ? '<div class="sc-desc">' + esc(cm.description) + '</div>' : '') +
-                '</div>';
-      });
-      html += '</div>';
-    }
-
-    /* Tech stack */
-    if (meta.tech && meta.tech.length) {
-      html += '<div class="detail-section"><h3>Tech Stack</h3><div>';
-      meta.tech.forEach(function (t) { html += '<span class="detail-tag">' + esc(t) + '</span>'; });
-      html += '</div></div>';
-    }
-
-    /* Endpoints */
-    if (meta.endpoints && meta.endpoints.length) {
-      html += '<div class="detail-section"><h3>API Endpoints</h3><ul class="detail-list">';
-      meta.endpoints.forEach(function (ep) {
-        html += '<li style="font-family:monospace;font-size:12px">' + esc(ep) + '</li>';
-      });
-      html += '</ul></div>';
-    }
-
-    /* Queues (for service_bus) */
-    if (meta.queues && meta.queues.length) {
-      html += '<div class="detail-section"><h3>Queues</h3><ul class="detail-list">';
-      meta.queues.forEach(function (q) {
-        var pub = nodeById(q.publisher);
-        var con = nodeById(q.consumer);
-        html += '<li style="flex-direction:column;align-items:flex-start">' +
-                '<strong style="font-family:monospace;font-size:12px">' + esc(q.name) + '</strong>' +
-                '<span style="font-size:11px;color:#7d8590">' +
-                esc(pub ? pub.data.label : '?') + ' \u2192 ' + esc(con ? con.data.label : '?') +
-                '</span></li>';
-      });
-      html += '</ul></div>';
-    }
-
-    /* Meta info table */
-    html += '<div class="detail-section"><h3>Details</h3>';
-    var owner = meta.owner || (st && st.owner) || '';
-    if (owner) {
-      html += '<div class="detail-meta-row"><span class="label">Owner</span><span class="value">' + esc(owner) + '</span></div>';
-    }
-    if (meta.team) {
-      html += '<div class="detail-meta-row"><span class="label">Team</span><span class="value">' + esc(meta.team) + '</span></div>';
-    }
-    if (meta.repo) {
-      html += '<div class="detail-meta-row"><span class="label">Repository</span><span class="value" style="font-family:monospace;font-size:12px">' + esc(meta.repo) + '</span></div>';
-    }
-    if (meta.repoUrl) {
-      html += '<div class="detail-meta-row"><span class="label">Repo Link</span><span class="value"><a class="detail-link" href="' + esc(meta.repoUrl) + '" target="_blank" rel="noopener">Open in Azure DevOps \u2197</a></span></div>';
-    }
-    if (st && st.lastCommit) {
-      html += '<div class="detail-meta-row"><span class="label">Last Commit</span><span class="value">' + esc(st.lastCommit) + '</span></div>';
-    }
-    if (st && st.commits) {
-      html += '<div class="detail-meta-row"><span class="label">Commit Activity</span><span class="value">' + esc(st.commits) + '</span></div>';
-    }
-    if (st) {
-      html += '<div class="detail-meta-row"><span class="label">CI Pipeline</span><span class="value">' + (st.ciPipeline ? '\u2705 Yes' : '\u274C No') + '</span></div>';
-      html += '<div class="detail-meta-row"><span class="label">Deployed</span><span class="value">' + (st.deployed ? '\u2705 Yes' : '\u274C No') + '</span></div>';
-    }
-    if (meta.contributors && meta.contributors.length) {
-      html += '<div class="detail-meta-row"><span class="label">Contributors</span><span class="value">' + esc(meta.contributors.join(', ')) + '</span></div>';
-    }
-    html += '</div>';
+    /* Tab contents */
+    html += '<div class="detail-tab-content active" data-detail-tab-content="overview">' + buildOverviewTab(id, nd, meta, st) + '</div>';
+    html += '<div class="detail-tab-content" data-detail-tab-content="activity">' + buildActivityTab(id) + '</div>';
+    html += '<div class="detail-tab-content" data-detail-tab-content="architecture">' + buildArchitectureTab(id, nd, meta, st) + '</div>';
 
     body.innerHTML = html;
+
+    /* Bind tab switching */
+    body.querySelectorAll('.detail-tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        body.querySelectorAll('.detail-tab').forEach(function (t) { t.classList.remove('active'); });
+        body.querySelectorAll('.detail-tab-content').forEach(function (c) { c.classList.remove('active'); });
+        tab.classList.add('active');
+        var target = tab.getAttribute('data-detail-tab');
+        var content = body.querySelector('[data-detail-tab-content="' + target + '"]');
+        if (content) content.classList.add('active');
+      });
+    });
+
     document.getElementById('detail-overlay').classList.add('open');
     document.getElementById('detail-panel').classList.add('open');
   }
