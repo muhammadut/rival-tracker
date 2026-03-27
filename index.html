@@ -34,7 +34,6 @@
       <div class="header-timestamp" id="header-timestamp">Not refreshed yet</div>
       <div class="tabs" id="view-tabs">
         <button class="tab active" data-view="architecture">Architecture</button>
-        <button class="tab" data-view="status">Status</button>
         <button class="tab" data-view="dataflow">Data Flow</button>
         <button class="tab" data-view="mvp">MVP Progress</button>
       </div>
@@ -1572,7 +1571,7 @@ window.dismissOnboarding = function() {
     document.querySelectorAll('.tab').forEach(function (t) {
       t.classList.toggle('active', t.dataset.view === view);
     });
-    applyStatusView(view === 'status');
+    applyStatusView(view === 'architecture' || view === 'dataflow');
     showFlowView(view === 'dataflow');
 
     /* Toggle animated flow dots - only in Architecture view */
@@ -3189,6 +3188,8 @@ window.dismissOnboarding = function() {
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
           drawConnections();
+          /* Show status colors by default (merged into Architecture view) */
+          applyStatusView(true);
           /* Enable flow dots by default (Architecture view is default) */
           document.getElementById('canvas-wrapper').classList.add('show-flow-dots');
         });
