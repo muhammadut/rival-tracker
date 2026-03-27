@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rival Rating Platform - Architecture Explorer</title>
+<style>
+/* ── Reset & Base ─────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+body{background:#0d1117;color:#e6edf3;overflow-x:hidden;min-height:100vh}
+
+/* Subtle grid background */
+body::before{content:'';position:fixed;inset:0;background-image:
+  linear-gradient(rgba(48,54,61,.18) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(48,54,61,.18) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0}
+
+#app{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh}
+
+/* ── Header ───────────────────────────────────── */
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid #21262d;background:rgba(13,17,23,.92);backdrop-filter:blur(8px);position:sticky;top:0;z-index:100}
+.header-left{display:flex;align-items:center;gap:16px}
+.header-left h1{font-size:18px;font-weight:600;color:#e6edf3;letter-spacing:-.3px}
+.header-left .subtitle{font-size:12px;color:#7d8590;margin-top:2px}
+.logo{width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#4f8fff,#9b6dff);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff}
+
+/* Header right: tabs + watch button */
+.header-right{display:flex;align-items:center;gap:12px}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;background:#161b22;border-radius:8px;padding:3px}
+.tab{padding:7px 16px;border-radius:6px;font-size:13px;font-weight:500;color:#7d8590;cursor:pointer;border:none;background:none;transition:all .2s}
+.tab:hover{color:#e6edf3}
+.tab.active{background:#21262d;color:#e6edf3}
+
+/* Watch Quote Flow button */
+.watch-flow-btn{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;border:none;background:linear-gradient(135deg,#4f8fff,#3a7ae0);transition:all .2s;white-space:nowrap;box-shadow:0 2px 8px rgba(79,143,255,.3)}
+.watch-flow-btn:hover{background:linear-gradient(135deg,#6ba0ff,#4f8fff);box-shadow:0 4px 16px rgba(79,143,255,.4);transform:translateY(-1px)}
+
+/* ── Status Summary Bar ───────────────────────── */
+.status-bar{display:none;padding:10px 32px;background:#161b22;border-bottom:1px solid #21262d;gap:24px;align-items:center;font-size:13px}
+.status-bar.visible{display:flex}
+.status-pill{display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;background:#21262d}
+.status-pill .dot{width:8px;height:8px;border-radius:50%}
+.status-pill .dot.green{background:#3fb950}
+.status-pill .dot.yellow{background:#d29922}
+.status-pill .dot.gray{background:#484f58}
+.status-pill .dot.blue{background:#4f8fff}
+.status-pill .dot.red{background:#f85149}
+
+/* ── Main Canvas ──────────────────────────────── */
+main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 120px}
+#canvas-wrapper{position:relative;margin:0 auto;max-width:1400px;min-height:600px}
+#connections-svg{position:absolute;top:0;left:0;pointer-events:none;z-index:1;overflow:visible}
+
+/* ── Vertical Pipeline Layout ─────────────────── */
+#pipeline{display:flex;flex-direction:column;align-items:center;gap:0;position:relative;z-index:2;padding:0 40px}
+
+/* ── Arrow Segments (Vertical) ────────────────── */
+.arrow-segment{display:flex;flex-direction:row;align-items:center;justify-content:center;height:60px;position:relative;width:200px}
+.arrow-label{font-size:10px;font-family:'SF Mono',SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace;color:#7d8590;white-space:nowrap;margin-left:10px;line-height:1.3;position:absolute;left:calc(50% + 16px)}
+.arrow-line-v{width:2px;height:100%;background:#30363d;position:relative}
+.arrow-line-v::after{content:'';position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);width:0;height:0;border-top:7px solid #30363d;border-left:5px solid transparent;border-right:5px solid transparent}
+
+/* Highlighted arrow */
+.arrow-segment.highlighted .arrow-line-v{background:#4f8fff}
+.arrow-segment.highlighted .arrow-line-v::after{border-top-color:#4f8fff}
+.arrow-segment.highlighted .arrow-label{color:#4f8fff}
+
+/* ── Fork Section ─────────────────────────────── */
+.fork-container{display:flex;flex-direction:column;align-items:center;width:100%;position:relative;z-index:2;margin-top:0}
+.fork-label{font-size:11px;color:#7d8590;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;font-weight:600;text-align:center}
+.fork-branches{display:flex;justify-content:center;gap:100px;position:relative;width:100%}
+.fork-branch{display:flex;flex-direction:column;align-items:center;gap:0}
+.fork-branch-label{font-size:10px;font-weight:600;color:#4f8fff;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;padding:4px 12px;border:1px solid rgba(79,143,255,.3);border-radius:12px;background:rgba(79,143,255,.06)}
+.fork-branch-label.not-built{color:#f85149;border-color:rgba(248,81,73,.3);background:rgba(248,81,73,.06)}
+
+/* ── Supporting Services (side panels) ────────── */
+#supporting-left,#supporting-right{position:absolute;top:0;z-index:2;display:flex;flex-direction:column;gap:20px;padding-top:60px}
+#supporting-left{left:0}
+#supporting-right{right:0}
+
+/* ── Card ─────────────────────────────────────── */
+.card{width:200px;background:#161b22;border:1px solid #30363d;border-radius:12px;padding:16px;cursor:pointer;transition:all .25s ease;position:relative;flex-shrink:0}
+.card:hover{border-color:#4f8fff;transform:translateY(-2px);box-shadow:0 4px 24px rgba(79,143,255,.08)}
+.card.active{border-color:#4f8fff;box-shadow:0 0 0 1px #4f8fff,0 4px 24px rgba(79,143,255,.12)}
+.card.dimmed{opacity:.35;filter:grayscale(.3);transition:opacity .3s,filter .3s}
+
+.card-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px}
+.card-title{font-size:14px;font-weight:600;color:#e6edf3;line-height:1.3;margin-bottom:4px}
+.card-subtitle{font-size:11px;color:#7d8590;line-height:1.3}
+.card-owner{font-size:11px;color:#7d8590;margin-top:8px;display:flex;align-items:center;gap:5px}
+.card-owner-dot{width:6px;height:6px;border-radius:50%;background:#3fb950;flex-shrink:0}
+
+/* Card type icons bg */
+.card-icon.webapp{background:rgba(79,143,255,.15);color:#4f8fff}
+.card-icon.api{background:rgba(63,185,80,.15);color:#3fb950}
+.card-icon.queue{background:rgba(210,153,34,.15);color:#d29922}
+.card-icon.worker{background:rgba(188,109,255,.15);color:#bc6dff}
+.card-icon.gateway{background:rgba(248,81,73,.15);color:#f85149}
+.card-icon.carrier{background:rgba(79,143,255,.15);color:#4f8fff}
+.card-icon.database{background:rgba(210,153,34,.15);color:#d29922}
+.card-icon.storage{background:rgba(63,185,80,.15);color:#3fb950}
+.card-icon.security{background:rgba(248,81,73,.15);color:#f85149}
+.card-icon.analytics{background:rgba(188,109,255,.15);color:#bc6dff}
+.card-icon.group{background:rgba(79,143,255,.15);color:#4f8fff}
+.card-icon.external_api{background:rgba(210,153,34,.15);color:#d29922}
+
+/* Supporting cards */
+.card.supporting{width:170px;padding:12px}
+.card.supporting .card-icon{width:26px;height:26px;font-size:13px;margin-bottom:8px;border-radius:6px}
+.card.supporting .card-title{font-size:12px}
+.card.supporting .card-subtitle{font-size:10px}
+
+/* Carriers group */
+.carriers-group{display:flex;flex-direction:column;align-items:center;gap:0}
+.carriers-group-label{font-size:10px;color:#7d8590;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600}
+.carriers-stack{display:flex;gap:8px}
+.carrier-mini{width:80px;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;transition:all .25s ease;font-size:11px;font-weight:500;color:#e6edf3}
+.carrier-mini:hover{border-color:#4f8fff;transform:translateY(-2px)}
+.carrier-mini.dimmed{opacity:.35}
+
+/* ── Status view card borders ─────────────────── */
+.card.status-green{border-left:4px solid #3fb950}
+.card.status-yellow{border-left:4px solid #d29922}
+.card.status-gray{border-left:4px dashed #484f58}
+.card.status-blue{border-left:4px solid #4f8fff}
+.card.status-red{border-left:4px solid #f85149}
+.blocker-icon{position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;background:rgba(248,81,73,.15);align-items:center;justify-content:center;font-size:10px;color:#f85149;display:none}
+.card.has-blocker .blocker-icon{display:flex}
+
+/* ── Detail Panel ─────────────────────────────── */
+#detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;opacity:0;pointer-events:none;transition:opacity .3s}
+#detail-overlay.open{opacity:1;pointer-events:auto}
+#detail-panel{position:fixed;top:0;right:0;bottom:0;width:480px;max-width:90vw;background:#161b22;border-left:1px solid #30363d;z-index:201;transform:translateX(100%);transition:transform .3s ease;overflow-y:auto;padding:0}
+#detail-panel.open{transform:translateX(0)}
+.detail-header{padding:24px;border-bottom:1px solid #21262d;position:sticky;top:0;background:#161b22;z-index:1}
+.detail-close{position:absolute;top:20px;right:20px;width:32px;height:32px;border-radius:8px;border:1px solid #30363d;background:none;color:#7d8590;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .2s}
+.detail-close:hover{background:#21262d;color:#e6edf3;border-color:#484f58}
+.detail-title{font-size:22px;font-weight:700;color:#e6edf3;margin-bottom:4px;padding-right:40px}
+.detail-type{font-size:12px;color:#7d8590;text-transform:uppercase;letter-spacing:.5px}
+.detail-body{padding:24px}
+.detail-section{margin-bottom:24px}
+.detail-section h3{font-size:12px;font-weight:600;color:#7d8590;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.detail-section p{font-size:14px;color:#e6edf3;line-height:1.6}
+.detail-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.detail-badge.green{background:rgba(63,185,80,.12);color:#3fb950}
+.detail-badge.yellow{background:rgba(210,153,34,.12);color:#d29922}
+.detail-badge.gray{background:rgba(72,79,88,.2);color:#7d8590}
+.detail-badge.blue{background:rgba(79,143,255,.12);color:#4f8fff}
+.detail-badge.red{background:rgba(248,81,73,.12);color:#f85149}
+.detail-tag{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;background:#21262d;color:#7d8590;margin:2px 4px 2px 0}
+.detail-link{color:#4f8fff;text-decoration:none;font-size:13px;display:inline-flex;align-items:center;gap:4px}
+.detail-link:hover{text-decoration:underline}
+.blocker-box{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);border-radius:8px;padding:12px;font-size:13px;color:#f85149;line-height:1.5}
+.detail-list{list-style:none;padding:0}
+.detail-list li{font-size:13px;color:#e6edf3;padding:6px 0;border-bottom:1px solid #21262d;display:flex;align-items:center;gap:8px}
+.detail-list li:last-child{border-bottom:none}
+.detail-list li .conn-dir{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;text-transform:uppercase;flex-shrink:0}
+.detail-list li .conn-dir.in{background:rgba(63,185,80,.12);color:#3fb950}
+.detail-list li .conn-dir.out{background:rgba(79,143,255,.12);color:#4f8fff}
+.conn-label{color:#7d8590;font-size:11px;margin-left:auto;text-align:right;flex-shrink:0;max-width:180px}
+.sub-component{background:#21262d;border-radius:8px;padding:10px 12px;margin-bottom:6px;font-size:12px;color:#e6edf3}
+.sub-component .sc-type{font-size:10px;color:#7d8590;text-transform:uppercase;letter-spacing:.3px}
+.sub-component .sc-desc{color:#7d8590;font-size:11px;margin-top:4px;line-height:1.4}
+.detail-meta-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d;font-size:13px}
+.detail-meta-row:last-child{border-bottom:none}
+.detail-meta-row .label{color:#7d8590}
+.detail-meta-row .value{color:#e6edf3;text-align:right;max-width:60%}
+
+/* ── Flow Controls ────────────────────────────── */
+#flow-controls{position:fixed;bottom:0;left:0;right:0;background:rgba(22,27,34,.95);backdrop-filter:blur(12px);border-top:1px solid #30363d;padding:16px 32px;z-index:100;display:none;align-items:center;gap:16px}
+#flow-controls.visible{display:flex}
+.flow-btn{width:36px;height:36px;border-radius:8px;border:1px solid #30363d;background:#21262d;color:#e6edf3;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .2s;flex-shrink:0}
+.flow-btn:hover{border-color:#4f8fff;background:#161b22}
+.flow-btn.primary{background:#4f8fff;border-color:#4f8fff;color:#fff}
+.flow-btn.primary:hover{background:#3a7ae0}
+.flow-info{flex:1;min-width:0}
+.flow-step-title{font-size:14px;font-weight:600;color:#e6edf3}
+.flow-step-detail{font-size:12px;color:#7d8590;margin-top:2px}
+.flow-progress{display:flex;gap:4px;align-items:center;flex-shrink:0}
+.flow-dot{width:8px;height:8px;border-radius:50%;background:#30363d;transition:background .3s}
+.flow-dot.active{background:#4f8fff}
+.flow-dot.done{background:#3fb950}
+.flow-select{background:#21262d;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:6px 10px;font-size:12px;cursor:pointer;flex-shrink:0}
+.flow-select option{background:#21262d;color:#e6edf3}
+.flow-select:focus{outline:none;border-color:#4f8fff}
+
+/* ── Glow dot for animation ───────────────────── */
+.glow-dot{position:absolute;width:12px;height:12px;border-radius:50%;background:#4f8fff;box-shadow:0 0 20px 6px rgba(79,143,255,.6);z-index:50;pointer-events:none;display:none}
+.glow-dot.visible{display:block}
+
+/* Card glow effect during flow */
+.card.flow-glow{box-shadow:0 0 20px 4px rgba(79,143,255,.25);border-color:#4f8fff}
+.carrier-mini.flow-glow{box-shadow:0 0 20px 4px rgba(79,143,255,.25);border-color:#4f8fff}
+
+/* ── Scrollbar ────────────────────────────────── */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:#0d1117}
+::-webkit-scrollbar-thumb{background:#30363d;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#484f58}
+
+/* ── Entry point indicator ────────────────────── */
+.entry-indicator{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:8px;flex-shrink:0}
+.entry-arrow{font-size:10px;color:#3fb950;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.entry-arrow .pulse-dot{width:8px;height:8px;border-radius:50%;background:#3fb950;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+
+.end-indicator{display:flex;align-items:center;gap:8px;margin-top:8px;flex-shrink:0}
+.end-label{font-size:10px;color:#7d8590;font-weight:600;text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
+
+/* ── Quote Flow Walkthrough Overlay ───────────── */
+#walkthrough-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;opacity:0;pointer-events:none;transition:opacity .3s}
+#walkthrough-overlay.open{opacity:1;pointer-events:auto}
+
+/* Walkthrough callout card */
+.wt-callout{position:fixed;z-index:310;max-width:340px;background:#1c2128;border:1px solid #30363d;border-radius:12px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,.5);opacity:0;transform:translateY(10px);transition:opacity .3s,transform .3s;pointer-events:auto}
+.wt-callout.visible{opacity:1;transform:translateY(0)}
+.wt-callout-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.wt-callout-title{font-size:15px;font-weight:700;color:#e6edf3}
+.wt-callout-step{font-size:11px;color:#7d8590;background:#21262d;padding:3px 8px;border-radius:10px;white-space:nowrap}
+.wt-callout-text{font-size:13px;color:#c9d1d9;line-height:1.6;margin-bottom:12px}
+.wt-callout-format{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;font-size:11px;font-family:'SF Mono',SFMono-Regular,Consolas,monospace;background:rgba(79,143,255,.1);color:#4f8fff;margin-bottom:12px}
+.wt-callout-next{font-size:11px;color:#7d8590;display:flex;align-items:center;gap:4px}
+.wt-callout-next .next-arrow{color:#4f8fff}
+.wt-callout-controls{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #21262d}
+.wt-btn{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #30363d;background:#21262d;color:#e6edf3;transition:all .2s}
+.wt-btn:hover{border-color:#4f8fff;background:#161b22}
+.wt-btn.primary{background:#4f8fff;border-color:#4f8fff;color:#fff}
+.wt-btn.primary:hover{background:#3a7ae0}
+.wt-btn-spacer{flex:1}
+
+/* Walkthrough summary card */
+.wt-summary{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:310;width:420px;max-width:90vw;background:#1c2128;border:1px solid #30363d;border-radius:16px;padding:32px;box-shadow:0 12px 48px rgba(0,0,0,.6);text-align:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.wt-summary.visible{opacity:1;pointer-events:auto}
+.wt-summary h2{font-size:20px;font-weight:700;color:#e6edf3;margin-bottom:6px}
+.wt-summary .wt-check{font-size:36px;margin-bottom:12px}
+.wt-summary-stats{display:flex;flex-direction:column;gap:8px;margin:20px 0;text-align:left}
+.wt-summary-stat{display:flex;align-items:center;gap:8px;font-size:13px;color:#c9d1d9;padding:6px 10px;background:#21262d;border-radius:6px}
+.wt-summary-stat .stat-icon{flex-shrink:0;width:20px;text-align:center}
+.wt-summary-stat.critical{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);color:#f85149}
+.wt-summary-actions{display:flex;gap:10px;justify-content:center;margin-top:20px}
+
+/* Fork SVG lines */
+.fork-svg{position:absolute;top:0;left:0;pointer-events:none;z-index:1;overflow:visible}
+
+/* ── Responsive ───────────────────────────────── */
+@media(max-width:1200px){
+  main{padding:40px 16px 120px}
+  #supporting-left,#supporting-right{position:relative;left:auto;right:auto;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:12px;padding-top:20px}
+  .fork-branches{gap:40px}
+}
+@media(max-width:900px){
+  header{flex-direction:column;gap:12px;padding:12px 16px}
+  .header-right{flex-wrap:wrap;justify-content:center}
+  .card{width:160px;padding:12px}
+  .card.supporting{width:140px}
+  #detail-panel{width:100vw;max-width:100vw}
+  #flow-controls{flex-wrap:wrap;padding:12px 16px}
+  .fork-branches{flex-direction:column;gap:20px;align-items:center}
+  .wt-callout{max-width:90vw;left:5vw!important;right:5vw!important}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="header-left">
+      <div class="logo">R</div>
+      <div>
+        <h1>Rival Rating Platform</h1>
+        <div class="subtitle">Architecture Explorer</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="tabs" id="view-tabs">
+        <button class="tab active" data-view="architecture">Architecture</button>
+        <button class="tab" data-view="status">Status</button>
+        <button class="tab" data-view="dataflow">Data Flow</button>
+      </div>
+      <button class="watch-flow-btn" id="watch-flow-btn">&#9654; Watch Quote Flow</button>
+    </div>
+  </header>
+
+  <div class="status-bar" id="status-bar"></div>
+
+  <main>
+    <div id="canvas-wrapper">
+      <div id="supporting-left"></div>
+      <div id="pipeline"></div>
+      <div id="fork-section" class="fork-container"></div>
+      <div id="supporting-right"></div>
+      <svg id="connections-svg"></svg>
+      <div class="glow-dot" id="glow-dot"></div>
+    </div>
+  </main>
+
+  <div id="detail-overlay"></div>
+  <div id="detail-panel">
+    <div class="detail-header">
+      <button class="detail-close" id="detail-close">&times;</button>
+      <div class="detail-title" id="detail-title"></div>
+      <div class="detail-type" id="detail-type"></div>
+    </div>
+    <div class="detail-body" id="detail-body"></div>
+  </div>
+
+  <div id="flow-controls">
+    <select class="flow-select" id="flow-select"></select>
+    <button class="flow-btn" id="flow-prev" title="Previous step">&#9664;</button>
+    <button class="flow-btn primary" id="flow-play" title="Play / Pause">&#9654;</button>
+    <button class="flow-btn" id="flow-next" title="Next step">&#9654;</button>
+    <div class="flow-info">
+      <div class="flow-step-title" id="flow-title">Select a flow to begin</div>
+      <div class="flow-step-detail" id="flow-detail"></div>
+    </div>
+    <div class="flow-progress" id="flow-progress"></div>
+  </div>
+
+  <!-- Walkthrough overlay -->
+  <div id="walkthrough-overlay"></div>
+  <div class="wt-callout" id="wt-callout"></div>
+  <div class="wt-summary" id="wt-summary"></div>
+</div>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var D = window.ARCH_DATA;
+
+  /* ── Helpers ──────────────────────────────────── */
+  function nodeById(id) {
+    return D.nodes.find(function (n) { return n.data.id === id; });
+  }
+  function metaFor(id)   { return D.meta[id]   || {}; }
+  function statusFor(id) { return D.status[id] || null; }
+  function edgesForNode(id) {
+    return D.edges.filter(function (e) {
+      return e.data.level === 1 && (e.data.source === id || e.data.target === id);
+    });
+  }
+  function childrenOf(id) {
+    return D.nodes.filter(function (n) { return n.data.parent === id && n.data.level === 2; });
+  }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  var TYPE_ICONS = {
+    webapp: '\uD83C\uDF10', api: '\u2699\uFE0F', queue: '\uD83D\uDCE8', worker: '\u26A1',
+    gateway: '\uD83D\uDEE1\uFE0F', carrier: '\uD83C\uDFE2', database: '\uD83D\uDCBE',
+    storage: '\uD83D\uDCC1', security: '\uD83D\uDD12', analytics: '\uD83D\uDCCA',
+    group: '\uD83D\uDCE6', external_api: '\uD83D\uDD17'
+  };
+  var TYPE_LABELS = {
+    webapp: 'Web Application', api: 'API Service', queue: 'Message Queue', worker: 'Worker Service',
+    gateway: 'API Gateway', carrier: 'Insurance Carrier', database: 'Database', storage: 'Blob Storage',
+    security: 'Secret Store', analytics: 'Analytics', group: 'Service Group', external_api: 'External API'
+  };
+
+  /* Pipeline order (before the fork) */
+  var PIPELINE_IDS = ['rpm_client', 'bff', 'quote_mgmt', 'service_bus', 'orchestrator'];
+  var CARRIER_IDS  = ['aviva', 'sgi', 'peace_hills'];
+
+  var PIPELINE_EDGE_LABELS = {
+    'rpm_client->bff':                'HTTP',
+    'bff->quote_mgmt':               '/api/quotes/*',
+    'quote_mgmt->service_bus':        'RatingRequest',
+    'service_bus->orchestrator':      'Consume queue',
+    'orchestrator->carrier_connector':'via Service Bus',
+    'carrier_connector->carriers':    'CSIO XML'
+  };
+
+  /* Supporting services on left and right sides */
+  var SUPPORTING_LEFT = ['schema_cache', 'cosmos_db', 'azure_sql', 'key_vault'];
+  var SUPPORTING_RIGHT = ['blob_storage', 'platform_config', 'apim', 'data_estate'];
+
+  var SUPPORTING_CONNECTIONS = [
+    { from: 'quote_mgmt',        to: 'schema_cache',    label: 'Schema bundles' },
+    { from: 'quote_mgmt',        to: 'cosmos_db',       label: 'Quote records' },
+    { from: 'schema_cache',      to: 'cosmos_db',       label: 'Schema store' },
+    { from: 'schema_cache',      to: 'azure_sql',       label: 'Rating rules' },
+    { from: 'orchestrator',      to: 'blob_storage',    label: 'Archive' },
+    { from: 'carrier_connector', to: 'blob_storage',    label: 'XML archive' },
+    { from: 'blob_storage',      to: 'data_estate',     label: 'Analytics' },
+    { from: 'bff',               to: 'platform_config', label: 'Config' },
+    { from: 'bff',               to: 'apim',            label: 'APIM key' },
+    { from: 'orchestrator',      to: 'manufacture',     label: 'Manual rating' }
+  ];
+
+  /* State */
+  var activeCard = null;
+  var flowState  = { playing: false, flow: null, stepIdx: -1, timer: null };
+
+  /* ── Card creation ────────────────────────────── */
+  function createCard(id, isSupporting) {
+    var node = nodeById(id);
+    if (!node) return null;
+    var nd   = node.data;
+    var meta = metaFor(id);
+    var st   = statusFor(id);
+
+    var el = document.createElement('div');
+    el.className = 'card' + (isSupporting ? ' supporting' : '');
+    el.dataset.id = id;
+
+    var iconClass = nd.type || 'api';
+    var icon      = TYPE_ICONS[iconClass] || '\u2699\uFE0F';
+    var subtitle  = meta.tech ? meta.tech[0] : (TYPE_LABELS[iconClass] || nd.type);
+    var owner     = (st && st.owner) || meta.owner || '';
+    var ownerDotColor = '#3fb950';
+    if (st) {
+      if (st.code === 'not_built' || st.code === 'empty') ownerDotColor = '#484f58';
+      else if (st.code === 'functional' && !st.deployed) ownerDotColor = '#d29922';
+    }
+
+    el.innerHTML =
+      '<div class="blocker-icon" title="Has blockers">\u26A0</div>' +
+      '<div class="card-icon ' + esc(iconClass) + '">' + icon + '</div>' +
+      '<div class="card-title">' + esc(nd.label) + '</div>' +
+      '<div class="card-subtitle">' + esc(subtitle) + '</div>' +
+      (owner ? '<div class="card-owner"><span class="card-owner-dot" style="background:' + ownerDotColor + '"></span>' + esc(owner) + '</div>' : '');
+
+    el.addEventListener('click', function (e) { e.stopPropagation(); showDetail(id); });
+    return el;
+  }
+
+  function createVerticalArrow(fromId, toId, label) {
+    var arrow = document.createElement('div');
+    arrow.className = 'arrow-segment';
+    arrow.dataset.from = fromId;
+    arrow.dataset.to   = toId;
+    arrow.innerHTML = '<div class="arrow-line-v"></div>' +
+      (label ? '<div class="arrow-label">' + esc(label) + '</div>' : '');
+    return arrow;
+  }
+
+  /* ── Render Pipeline (Vertical) ─────────────── */
+  function renderPipeline() {
+    var container = document.getElementById('pipeline');
+    container.innerHTML = '';
+
+    /* Entry indicator */
+    var entry = document.createElement('div');
+    entry.className = 'entry-indicator';
+    entry.innerHTML = '<span class="entry-arrow"><span class="pulse-dot"></span>Request Start</span>';
+    container.appendChild(entry);
+
+    PIPELINE_IDS.forEach(function (id, i) {
+      var card = createCard(id, false);
+      if (card) container.appendChild(card);
+
+      if (i < PIPELINE_IDS.length - 1) {
+        var key   = PIPELINE_IDS[i] + '->' + PIPELINE_IDS[i + 1];
+        var label = PIPELINE_EDGE_LABELS[key] || '';
+        container.appendChild(createVerticalArrow(PIPELINE_IDS[i], PIPELINE_IDS[i + 1], label));
+      }
+    });
+
+    /* Arrow from orchestrator to fork */
+    var forkArrow = document.createElement('div');
+    forkArrow.className = 'arrow-segment';
+    forkArrow.dataset.from = 'orchestrator';
+    forkArrow.dataset.to = 'fork';
+    forkArrow.innerHTML = '<div class="arrow-line-v"></div><div class="arrow-label">Fan out</div>';
+    container.appendChild(forkArrow);
+
+    /* Fork label */
+    var forkLabel = document.createElement('div');
+    forkLabel.className = 'fork-label';
+    forkLabel.textContent = 'Rating Path Fork';
+    container.appendChild(forkLabel);
+
+    /* Fork branches */
+    var forkBranches = document.createElement('div');
+    forkBranches.className = 'fork-branches';
+
+    /* Left branch - Direct Rating */
+    var leftBranch = document.createElement('div');
+    leftBranch.className = 'fork-branch';
+
+    var leftLabel = document.createElement('div');
+    leftLabel.className = 'fork-branch-label';
+    leftLabel.textContent = 'Direct Rating';
+    leftBranch.appendChild(leftLabel);
+
+    var ccCard = createCard('carrier_connector', false);
+    if (ccCard) leftBranch.appendChild(ccCard);
+
+    /* Arrow from carrier_connector to carriers */
+    leftBranch.appendChild(createVerticalArrow('carrier_connector', 'carriers', 'CSIO XML'));
+
+    /* Carriers group */
+    var cg = document.createElement('div');
+    cg.className = 'carriers-group';
+    cg.innerHTML = '<div class="carriers-group-label">Insurance Carriers</div>';
+    var stack = document.createElement('div');
+    stack.className = 'carriers-stack';
+    CARRIER_IDS.forEach(function (cid) {
+      var n = nodeById(cid);
+      if (!n) return;
+      var mini = document.createElement('div');
+      mini.className = 'carrier-mini';
+      mini.dataset.id = cid;
+      mini.textContent = n.data.label;
+      mini.addEventListener('click', function (e) { e.stopPropagation(); showDetail(cid); });
+      stack.appendChild(mini);
+    });
+    cg.appendChild(stack);
+    leftBranch.appendChild(cg);
+
+    forkBranches.appendChild(leftBranch);
+
+    /* Right branch - Manufactured Rating */
+    var rightBranch = document.createElement('div');
+    rightBranch.className = 'fork-branch';
+
+    var rightLabel = document.createElement('div');
+    rightLabel.className = 'fork-branch-label not-built';
+    rightLabel.textContent = 'Manufactured Rating';
+    rightBranch.appendChild(rightLabel);
+
+    var mfCard = createCard('manufacture', false);
+    if (mfCard) rightBranch.appendChild(mfCard);
+
+    forkBranches.appendChild(rightBranch);
+    container.appendChild(forkBranches);
+
+    /* End indicator */
+    var end = document.createElement('div');
+    end.className = 'end-indicator';
+    end.innerHTML = '<span class="end-label">Response flows back up</span>';
+    container.appendChild(end);
+  }
+
+  /* ── Render Supporting Services (sides) ─────── */
+  function renderSupporting() {
+    var leftContainer = document.getElementById('supporting-left');
+    var rightContainer = document.getElementById('supporting-right');
+    leftContainer.innerHTML = '';
+    rightContainer.innerHTML = '';
+
+    SUPPORTING_LEFT.forEach(function (id) {
+      var card = createCard(id, true);
+      if (card) leftContainer.appendChild(card);
+    });
+
+    SUPPORTING_RIGHT.forEach(function (id) {
+      var card = createCard(id, true);
+      if (card) rightContainer.appendChild(card);
+    });
+  }
+
+  /* ── Draw SVG Connections ─────────────────────── */
+  function drawConnections() {
+    var svg     = document.getElementById('connections-svg');
+    var wrapper = document.getElementById('canvas-wrapper');
+    var wW      = wrapper.scrollWidth;
+    var wH      = wrapper.scrollHeight;
+
+    svg.setAttribute('width', wW);
+    svg.setAttribute('height', wH);
+    svg.style.width  = wW + 'px';
+    svg.style.height = wH + 'px';
+    svg.innerHTML = '';
+
+    /* Defs */
+    var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    defs.innerHTML =
+      '<marker id="arr" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto">' +
+        '<polygon points="0 0, 10 3.5, 0 7" fill="#484f58"/>' +
+      '</marker>' +
+      '<marker id="arr-hl" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto">' +
+        '<polygon points="0 0, 10 3.5, 0 7" fill="#4f8fff"/>' +
+      '</marker>';
+    svg.appendChild(defs);
+
+    var wrapperRect = wrapper.getBoundingClientRect();
+
+    SUPPORTING_CONNECTIONS.forEach(function (conn) {
+      var fromEl = wrapper.querySelector('.card[data-id="' + conn.from + '"]');
+      var toEl   = wrapper.querySelector('.card[data-id="' + conn.to + '"]');
+      if (!fromEl || !toEl) return;
+
+      var fromR = fromEl.getBoundingClientRect();
+      var toR   = toEl.getBoundingClientRect();
+
+      /* Determine if connecting horizontally (pipeline card to side card) */
+      var fromCX = fromR.left + fromR.width / 2 - wrapperRect.left;
+      var fromCY = fromR.top + fromR.height / 2 - wrapperRect.top;
+      var toCX   = toR.left + toR.width / 2 - wrapperRect.left;
+      var toCY   = toR.top + toR.height / 2 - wrapperRect.top;
+
+      /* Use edge points for cleaner connections */
+      var x1, y1, x2, y2;
+      if (toCX < fromCX) {
+        /* Target is to the left */
+        x1 = fromR.left - wrapperRect.left;
+        y1 = fromCY;
+        x2 = toR.right - wrapperRect.left;
+        y2 = toCY;
+      } else {
+        /* Target is to the right */
+        x1 = fromR.right - wrapperRect.left;
+        y1 = fromCY;
+        x2 = toR.left - wrapperRect.left;
+        y2 = toCY;
+      }
+
+      var midX = x1 + (x2 - x1) * 0.5;
+
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' C ' + midX + ' ' + y1 + ', ' + midX + ' ' + y2 + ', ' + x2 + ' ' + y2);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', '#30363d');
+      path.setAttribute('stroke-width', '1.5');
+      path.setAttribute('stroke-dasharray', '4 3');
+      path.setAttribute('marker-end', 'url(#arr)');
+      path.dataset.from = conn.from;
+      path.dataset.to   = conn.to;
+      svg.appendChild(path);
+
+      /* Label */
+      var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      var labelX = midX;
+      var labelY = (y1 + y2) / 2 - 6;
+      text.setAttribute('x', labelX);
+      text.setAttribute('y', labelY);
+      text.setAttribute('fill', '#7d8590');
+      text.setAttribute('font-size', '10');
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('font-family', "'SF Mono',SFMono-Regular,Consolas,monospace");
+      text.textContent = conn.label;
+      svg.appendChild(text);
+    });
+  }
+
+  /* ── Show Detail Panel ────────────────────────── */
+  function showDetail(id) {
+    var node = nodeById(id);
+    if (!node) return;
+    var nd   = node.data;
+    var meta = metaFor(id);
+    var st   = statusFor(id);
+
+    activeCard = id;
+    dimCards(id);
+
+    document.getElementById('detail-title').textContent = nd.label;
+    document.getElementById('detail-type').textContent  = TYPE_LABELS[nd.type] || nd.type || '';
+
+    var body = document.getElementById('detail-body');
+    var html = '';
+
+    /* Status badge */
+    if (st) {
+      var sc = getStatusClass(st);
+      var sl = getStatusLabel(st);
+      html += '<div class="detail-section"><h3>Status</h3><span class="detail-badge ' + sc + '">\u25CF ' + esc(sl) + '</span></div>';
+    }
+
+    /* Description */
+    if (meta.description) {
+      html += '<div class="detail-section"><h3>What It Does</h3><p>' + esc(meta.description) + '</p></div>';
+    }
+
+    /* Blocker */
+    if (st && st.blocker) {
+      html += '<div class="detail-section"><h3>Blockers</h3><div class="blocker-box">' + esc(st.blocker) + '</div></div>';
+    }
+
+    /* Connections */
+    var edges   = edgesForNode(id);
+    var inbound = edges.filter(function (e) { return e.data.target === id; });
+    var outbound= edges.filter(function (e) { return e.data.source === id; });
+    if (inbound.length || outbound.length) {
+      html += '<div class="detail-section"><h3>Connections</h3><ul class="detail-list">';
+      inbound.forEach(function (e) {
+        var src = nodeById(e.data.source);
+        html += '<li><span class="conn-dir in">IN</span> ' + esc(src ? src.data.label : e.data.source) +
+                '<span class="conn-label">' + esc(e.data.label) + '</span></li>';
+      });
+      outbound.forEach(function (e) {
+        var tgt = nodeById(e.data.target);
+        html += '<li><span class="conn-dir out">OUT</span> ' + esc(tgt ? tgt.data.label : e.data.target) +
+                '<span class="conn-label">' + esc(e.data.label) + '</span></li>';
+      });
+      html += '</ul></div>';
+    }
+
+    /* Internal components */
+    var children = childrenOf(id);
+    if (children.length) {
+      html += '<div class="detail-section"><h3>Internal Components</h3>';
+      children.forEach(function (c) {
+        var cm = metaFor(c.data.id);
+        html += '<div class="sub-component"><strong>' + esc(c.data.label) + '</strong>' +
+                '<div class="sc-type">' + esc(c.data.type) + '</div>' +
+                (cm.description ? '<div class="sc-desc">' + esc(cm.description) + '</div>' : '') +
+                '</div>';
+      });
+      html += '</div>';
+    }
+
+    /* Tech stack */
+    if (meta.tech && meta.tech.length) {
+      html += '<div class="detail-section"><h3>Tech Stack</h3><div>';
+      meta.tech.forEach(function (t) { html += '<span class="detail-tag">' + esc(t) + '</span>'; });
+      html += '</div></div>';
+    }
+
+    /* Endpoints */
+    if (meta.endpoints && meta.endpoints.length) {
+      html += '<div class="detail-section"><h3>API Endpoints</h3><ul class="detail-list">';
+      meta.endpoints.forEach(function (ep) {
+        html += '<li style="font-family:monospace;font-size:12px">' + esc(ep) + '</li>';
+      });
+      html += '</ul></div>';
+    }
+
+    /* Queues (for service_bus) */
+    if (meta.queues && meta.queues.length) {
+      html += '<div class="detail-section"><h3>Queues</h3><ul class="detail-list">';
+      meta.queues.forEach(function (q) {
+        var pub = nodeById(q.publisher);
+        var con = nodeById(q.consumer);
+        html += '<li style="flex-direction:column;align-items:flex-start">' +
+                '<strong style="font-family:monospace;font-size:12px">' + esc(q.name) + '</strong>' +
+                '<span style="font-size:11px;color:#7d8590">' +
+                esc(pub ? pub.data.label : '?') + ' \u2192 ' + esc(con ? con.data.label : '?') +
+                '</span></li>';
+      });
+      html += '</ul></div>';
+    }
+
+    /* Meta info table */
+    html += '<div class="detail-section"><h3>Details</h3>';
+    var owner = meta.owner || (st && st.owner) || '';
+    if (owner) {
+      html += '<div class="detail-meta-row"><span class="label">Owner</span><span class="value">' + esc(owner) + '</span></div>';
+    }
+    if (meta.team) {
+      html += '<div class="detail-meta-row"><span class="label">Team</span><span class="value">' + esc(meta.team) + '</span></div>';
+    }
+    if (meta.repo) {
+      html += '<div class="detail-meta-row"><span class="label">Repository</span><span class="value" style="font-family:monospace;font-size:12px">' + esc(meta.repo) + '</span></div>';
+    }
+    if (meta.repoUrl) {
+      html += '<div class="detail-meta-row"><span class="label">Repo Link</span><span class="value"><a class="detail-link" href="' + esc(meta.repoUrl) + '" target="_blank" rel="noopener">Open in Azure DevOps \u2197</a></span></div>';
+    }
+    if (st && st.lastCommit) {
+      html += '<div class="detail-meta-row"><span class="label">Last Commit</span><span class="value">' + esc(st.lastCommit) + '</span></div>';
+    }
+    if (st && st.commits) {
+      html += '<div class="detail-meta-row"><span class="label">Commit Activity</span><span class="value">' + esc(st.commits) + '</span></div>';
+    }
+    if (st) {
+      html += '<div class="detail-meta-row"><span class="label">CI Pipeline</span><span class="value">' + (st.ciPipeline ? '\u2705 Yes' : '\u274C No') + '</span></div>';
+      html += '<div class="detail-meta-row"><span class="label">Deployed</span><span class="value">' + (st.deployed ? '\u2705 Yes' : '\u274C No') + '</span></div>';
+    }
+    if (meta.contributors && meta.contributors.length) {
+      html += '<div class="detail-meta-row"><span class="label">Contributors</span><span class="value">' + esc(meta.contributors.join(', ')) + '</span></div>';
+    }
+    html += '</div>';
+
+    body.innerHTML = html;
+    document.getElementById('detail-overlay').classList.add('open');
+    document.getElementById('detail-panel').classList.add('open');
+  }
+
+  function closeDetail() {
+    activeCard = null;
+    document.getElementById('detail-overlay').classList.remove('open');
+    document.getElementById('detail-panel').classList.remove('open');
+    undimCards();
+  }
+
+  function dimCards(exceptId) {
+    document.querySelectorAll('.card').forEach(function (c) {
+      c.classList.toggle('dimmed', c.dataset.id !== exceptId);
+      c.classList.toggle('active', c.dataset.id === exceptId);
+    });
+    document.querySelectorAll('.carrier-mini').forEach(function (c) {
+      c.classList.toggle('dimmed', c.dataset.id !== exceptId);
+    });
+  }
+
+  function undimCards() {
+    document.querySelectorAll('.card').forEach(function (c) {
+      c.classList.remove('dimmed', 'active');
+    });
+    document.querySelectorAll('.carrier-mini').forEach(function (c) {
+      c.classList.remove('dimmed');
+    });
+  }
+
+  /* ── Status Helpers ───────────────────────────── */
+  function getStatusClass(st) {
+    if (!st) return 'gray';
+    if (st.code === 'functional' && st.deployed)  return 'green';
+    if (st.code === 'functional' && !st.deployed) return 'yellow';
+    if (st.code === 'infra_only') return 'blue';
+    return 'gray';
+  }
+
+  function getStatusLabel(st) {
+    if (!st) return 'Unknown';
+    if (st.code === 'functional' && st.deployed)  return 'Functional & Deployed';
+    if (st.code === 'functional' && !st.deployed) return 'Functional, Not Deployed';
+    if (st.code === 'infra_only') return 'Infrastructure Only';
+    if (st.code === 'empty')     return 'Empty / Scaffold Only';
+    if (st.code === 'not_built') return 'Not Built';
+    return st.code;
+  }
+
+  /* ── Status View ──────────────────────────────── */
+  function applyStatusView(on) {
+    document.querySelectorAll('.card').forEach(function (card) {
+      var id = card.dataset.id;
+      var st = statusFor(id);
+      card.classList.remove('status-green', 'status-yellow', 'status-gray', 'status-blue', 'status-red', 'has-blocker');
+      if (on && st) {
+        card.classList.add('status-' + getStatusClass(st));
+        if (st.blocker) card.classList.add('has-blocker');
+      }
+    });
+
+    var bar = document.getElementById('status-bar');
+    if (on) {
+      var statuses   = Object.values(D.status);
+      var total      = statuses.length;
+      var functional = statuses.filter(function (s) { return s.code === 'functional'; }).length;
+      var deployed   = statuses.filter(function (s) { return s.deployed; }).length;
+      var blockers   = statuses.filter(function (s) { return s.blocker; }).length;
+
+      bar.innerHTML =
+        '<span class="status-pill"><span class="dot green"></span> ' + functional + '/' + total + ' functional</span>' +
+        '<span class="status-pill"><span class="dot blue"></span> ' + deployed + '/' + total + ' deployed</span>' +
+        '<span class="status-pill"><span class="dot red"></span> ' + blockers + ' with blockers</span>';
+      bar.classList.add('visible');
+    } else {
+      bar.classList.remove('visible');
+    }
+  }
+
+  /* ── Data Flow Animation ──────────────────────── */
+  function initFlowControls() {
+    var select = document.getElementById('flow-select');
+    select.innerHTML = '';
+    D.flows.forEach(function (f) {
+      var opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = f.name;
+      select.appendChild(opt);
+    });
+    select.addEventListener('change', function () {
+      stopFlow();
+      flowState.flow    = D.flows.find(function (f) { return f.id === select.value; });
+      flowState.stepIdx = -1;
+      clearFlowHighlights();
+      updateFlowUI();
+    });
+
+    document.getElementById('flow-play').addEventListener('click', togglePlayFlow);
+    document.getElementById('flow-next').addEventListener('click', stepForward);
+    document.getElementById('flow-prev').addEventListener('click', stepBackward);
+  }
+
+  function showFlowView(on) {
+    var ctrl = document.getElementById('flow-controls');
+    if (on) {
+      ctrl.classList.add('visible');
+      flowState.flow    = D.flows[0];
+      flowState.stepIdx = -1;
+      updateFlowUI();
+    } else {
+      ctrl.classList.remove('visible');
+      stopFlow();
+      clearFlowHighlights();
+    }
+  }
+
+  function updateFlowUI() {
+    var flow = flowState.flow;
+    if (!flow) return;
+
+    var progress = document.getElementById('flow-progress');
+    progress.innerHTML = '';
+    flow.steps.forEach(function (s, i) {
+      var dot = document.createElement('div');
+      dot.className = 'flow-dot' + (i < flowState.stepIdx ? ' done' : '') + (i === flowState.stepIdx ? ' active' : '');
+      progress.appendChild(dot);
+    });
+
+    if (flowState.stepIdx >= 0 && flowState.stepIdx < flow.steps.length) {
+      var step = flow.steps[flowState.stepIdx];
+      document.getElementById('flow-title').textContent  = 'Step ' + step.seq + ': ' + step.title;
+      document.getElementById('flow-detail').textContent = step.detail;
+    } else {
+      document.getElementById('flow-title').textContent  = flow.name;
+      document.getElementById('flow-detail').textContent = flow.description;
+    }
+  }
+
+  function stepForward() {
+    if (!flowState.flow) return;
+    clearFlowHighlights();
+    flowState.stepIdx++;
+    if (flowState.stepIdx >= flowState.flow.steps.length) flowState.stepIdx = 0;
+    highlightFlowStep(flowState.flow.steps[flowState.stepIdx]);
+    updateFlowUI();
+  }
+
+  function stepBackward() {
+    if (!flowState.flow) return;
+    clearFlowHighlights();
+    flowState.stepIdx--;
+    if (flowState.stepIdx < 0) flowState.stepIdx = flowState.flow.steps.length - 1;
+    highlightFlowStep(flowState.flow.steps[flowState.stepIdx]);
+    updateFlowUI();
+  }
+
+  function togglePlayFlow() {
+    if (flowState.playing) {
+      stopFlow();
+    } else {
+      flowState.playing = true;
+      document.getElementById('flow-play').innerHTML = '\u275A\u275A';
+      flowState.timer = setInterval(function () { stepForward(); }, 2000);
+    }
+  }
+
+  function stopFlow() {
+    flowState.playing = false;
+    document.getElementById('flow-play').innerHTML = '\u25B6';
+    if (flowState.timer) { clearInterval(flowState.timer); flowState.timer = null; }
+  }
+
+  function highlightFlowStep(step) {
+    var srcCard = document.querySelector('.card[data-id="' + step.source + '"]') ||
+                  document.querySelector('.carrier-mini[data-id="' + step.source + '"]');
+    var tgtCard = document.querySelector('.card[data-id="' + step.target + '"]') ||
+                  document.querySelector('.carrier-mini[data-id="' + step.target + '"]');
+
+    if (srcCard) srcCard.classList.add('flow-glow');
+    if (tgtCard) tgtCard.classList.add('flow-glow');
+
+    /* Highlight pipeline arrows */
+    document.querySelectorAll('.arrow-segment').forEach(function (a) {
+      if (a.dataset.from === step.source && a.dataset.to === step.target) {
+        a.classList.add('highlighted');
+      }
+      if (step.source === 'service_bus' && step.target === 'orchestrator' &&
+          a.dataset.from === 'service_bus' && a.dataset.to === 'orchestrator') {
+        a.classList.add('highlighted');
+      }
+      if (step.source === 'service_bus' && step.target === 'carrier_connector' &&
+          a.dataset.from === 'orchestrator' && a.dataset.to === 'carrier_connector') {
+        a.classList.add('highlighted');
+      }
+      if (step.source === 'carrier_connector' &&
+          (step.target === 'aviva' || step.target === 'sgi' || step.target === 'peace_hills') &&
+          a.dataset.to === 'carriers') {
+        a.classList.add('highlighted');
+      }
+    });
+
+    /* Highlight SVG paths */
+    document.querySelectorAll('#connections-svg path').forEach(function (p) {
+      if ((p.dataset.from === step.source && p.dataset.to === step.target) ||
+          (p.dataset.to === step.source && p.dataset.from === step.target)) {
+        p.setAttribute('stroke', '#4f8fff');
+        p.setAttribute('stroke-width', '2');
+        p.setAttribute('stroke-dasharray', 'none');
+        p.setAttribute('marker-end', 'url(#arr-hl)');
+      }
+    });
+
+    /* Animate glow dot */
+    animateGlowDot(step.source, step.target);
+
+    /* Dim non-participating cards */
+    document.querySelectorAll('.card').forEach(function (c) {
+      if (c.dataset.id !== step.source && c.dataset.id !== step.target) {
+        c.style.opacity = '0.3';
+      } else {
+        c.style.opacity = '1';
+      }
+    });
+    document.querySelectorAll('.carrier-mini').forEach(function (c) {
+      if (c.dataset.id !== step.source && c.dataset.id !== step.target) {
+        c.style.opacity = '0.3';
+      } else {
+        c.style.opacity = '1';
+      }
+    });
+  }
+
+  function clearFlowHighlights() {
+    document.querySelectorAll('.card').forEach(function (c) {
+      c.classList.remove('flow-glow');
+      c.style.opacity = '';
+    });
+    document.querySelectorAll('.carrier-mini').forEach(function (c) {
+      c.style.opacity = '';
+      c.classList.remove('flow-glow');
+    });
+    document.querySelectorAll('.arrow-segment').forEach(function (a) {
+      a.classList.remove('highlighted');
+    });
+    document.querySelectorAll('#connections-svg path').forEach(function (p) {
+      p.setAttribute('stroke', '#30363d');
+      p.setAttribute('stroke-width', '1.5');
+      p.setAttribute('stroke-dasharray', '4 3');
+      p.setAttribute('marker-end', 'url(#arr)');
+    });
+    var dot = document.getElementById('glow-dot');
+    dot.classList.remove('visible');
+  }
+
+  function animateGlowDot(fromId, toId) {
+    var wrapper = document.getElementById('canvas-wrapper');
+    var dot     = document.getElementById('glow-dot');
+    var fromEl  = wrapper.querySelector('.card[data-id="' + fromId + '"]') ||
+                  wrapper.querySelector('.carrier-mini[data-id="' + fromId + '"]');
+    var toEl    = wrapper.querySelector('.card[data-id="' + toId + '"]') ||
+                  wrapper.querySelector('.carrier-mini[data-id="' + toId + '"]');
+
+    if (!fromEl || !toEl) { dot.classList.remove('visible'); return; }
+
+    var wrapperRect = wrapper.getBoundingClientRect();
+    var fromR = fromEl.getBoundingClientRect();
+    var toR   = toEl.getBoundingClientRect();
+
+    var x1 = fromR.left + fromR.width / 2 - wrapperRect.left;
+    var y1 = fromR.top  + fromR.height / 2 - wrapperRect.top;
+    var x2 = toR.left   + toR.width / 2 - wrapperRect.left;
+    var y2 = toR.top    + toR.height / 2 - wrapperRect.top;
+
+    dot.style.transition = 'none';
+    dot.style.left = (x1 - 6) + 'px';
+    dot.style.top  = (y1 - 6) + 'px';
+    dot.classList.add('visible');
+
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        dot.style.transition = 'left 1.2s ease-in-out, top 1.2s ease-in-out';
+        dot.style.left = (x2 - 6) + 'px';
+        dot.style.top  = (y2 - 6) + 'px';
+      });
+    });
+  }
+
+  /* ── View Switching ───────────────────────────── */
+  function switchView(view) {
+    document.querySelectorAll('.tab').forEach(function (t) {
+      t.classList.toggle('active', t.dataset.view === view);
+    });
+    applyStatusView(view === 'status');
+    showFlowView(view === 'dataflow');
+  }
+
+  /* ═══════════════════════════════════════════════
+     ── QUOTE FLOW WALKTHROUGH ──
+     ═══════════════════════════════════════════════ */
+
+  var WT_STEPS = [
+    {
+      id: 'rpm_client',
+      title: 'RPM Client (Blazor)',
+      text: 'A broker fills out the quote form - selecting province, coverage type, and carriers to quote with.',
+      format: 'Form Data',
+      next: 'Web BFF'
+    },
+    {
+      id: 'bff',
+      title: 'Web BFF',
+      text: 'The form data is forwarded to the backend through the BFF proxy layer.',
+      format: 'HTTP POST',
+      next: 'Quote Management'
+    },
+    {
+      id: 'quote_mgmt',
+      title: 'Quote Management',
+      text: 'A quote record is created in MongoDB. The request is packaged as a JSON DTO and published to the Service Bus.',
+      format: 'JSON DTO',
+      next: 'Azure Service Bus'
+    },
+    {
+      id: 'service_bus',
+      title: 'Azure Service Bus',
+      text: "The message sits in the 'initial-rating-requests' queue, waiting to be picked up.",
+      format: 'Queue Message',
+      next: 'Rating Orchestrator'
+    },
+    {
+      id: 'orchestrator',
+      title: 'Rating Orchestrator',
+      text: 'The orchestrator picks up the message, saves a copy to blob storage, then fans out individual carrier requests.',
+      format: 'JSON DTO',
+      next: 'Rating Path Fork'
+    },
+    {
+      id: 'carrier_connector',
+      title: 'Direct Rating (Carrier Connector)',
+      text: 'For carriers like Aviva, SGI, Peace Hills - the request is translated to CSIO XML and sent directly to the carrier\'s API.',
+      format: 'CSIO XML',
+      next: 'Insurance Carriers',
+      isForkLeft: true
+    },
+    {
+      id: 'manufacture',
+      title: 'Manufactured Rating',
+      text: 'For in-house rated products - rating rules from the database are applied to calculate premiums directly. NOT YET BUILT - zero application code exists.',
+      format: 'N/A',
+      next: null,
+      isForkRight: true
+    },
+    {
+      id: 'carriers_group',
+      title: 'Insurance Carriers',
+      text: 'The carrier processes the CSIO XML and returns a rating response. Each carrier (Aviva, SGI, Peace Hills) has its own adapter and authentication method.',
+      format: 'Rating Response XML',
+      next: 'Response flows back'
+    },
+    {
+      id: 'response_flow',
+      title: 'Response Flow',
+      text: 'The response travels back through Service Bus, Orchestrator, Quote Management, BFF, and finally to the RPM Client where the broker sees their quotes.',
+      format: 'JSON DTO',
+      next: 'Complete',
+      highlightIds: ['service_bus', 'orchestrator', 'quote_mgmt', 'bff', 'rpm_client']
+    }
+  ];
+
+  var wtState = { active: false, stepIdx: 0, playing: false, timer: null };
+
+  function startWalkthrough() {
+    wtState.active = true;
+    wtState.stepIdx = 0;
+    wtState.playing = true;
+    document.getElementById('walkthrough-overlay').classList.add('open');
+    document.getElementById('wt-summary').classList.remove('visible');
+    showWtStep(0);
+    wtState.timer = setInterval(function () { wtAutoAdvance(); }, 3500);
+  }
+
+  function stopWalkthrough() {
+    wtState.active = false;
+    wtState.playing = false;
+    if (wtState.timer) { clearInterval(wtState.timer); wtState.timer = null; }
+    document.getElementById('walkthrough-overlay').classList.remove('open');
+    document.getElementById('wt-callout').classList.remove('visible');
+    document.getElementById('wt-summary').classList.remove('visible');
+    clearWtHighlights();
+  }
+
+  function pauseWalkthrough() {
+    wtState.playing = !wtState.playing;
+    if (wtState.playing) {
+      wtState.timer = setInterval(function () { wtAutoAdvance(); }, 3500);
+    } else {
+      if (wtState.timer) { clearInterval(wtState.timer); wtState.timer = null; }
+    }
+    /* Re-render callout controls */
+    showWtStep(wtState.stepIdx);
+  }
+
+  function wtAutoAdvance() {
+    if (!wtState.playing) return;
+    wtState.stepIdx++;
+    if (wtState.stepIdx >= WT_STEPS.length) {
+      if (wtState.timer) { clearInterval(wtState.timer); wtState.timer = null; }
+      wtState.playing = false;
+      showWtSummary();
+      return;
+    }
+    showWtStep(wtState.stepIdx);
+  }
+
+  function wtNextStep() {
+    wtState.stepIdx++;
+    if (wtState.stepIdx >= WT_STEPS.length) {
+      showWtSummary();
+      return;
+    }
+    showWtStep(wtState.stepIdx);
+  }
+
+  function wtPrevStep() {
+    wtState.stepIdx--;
+    if (wtState.stepIdx < 0) wtState.stepIdx = 0;
+    document.getElementById('wt-summary').classList.remove('visible');
+    showWtStep(wtState.stepIdx);
+  }
+
+  function clearWtHighlights() {
+    document.querySelectorAll('.card').forEach(function (c) {
+      c.classList.remove('flow-glow');
+      c.style.opacity = '';
+    });
+    document.querySelectorAll('.carrier-mini').forEach(function (c) {
+      c.style.opacity = '';
+      c.classList.remove('flow-glow');
+    });
+    var dot = document.getElementById('glow-dot');
+    dot.classList.remove('visible');
+  }
+
+  function showWtStep(idx) {
+    var step = WT_STEPS[idx];
+    if (!step) return;
+
+    clearWtHighlights();
+
+    /* Dim all cards */
+    document.querySelectorAll('.card').forEach(function (c) {
+      c.style.opacity = '0.3';
+      c.style.transition = 'opacity .3s';
+    });
+    document.querySelectorAll('.carrier-mini').forEach(function (c) {
+      c.style.opacity = '0.3';
+      c.style.transition = 'opacity .3s';
+    });
+
+    /* Highlight the active component(s) */
+    var targetEls = [];
+    if (step.highlightIds) {
+      step.highlightIds.forEach(function (hid) {
+        var el = document.querySelector('.card[data-id="' + hid + '"]');
+        if (el) {
+          el.style.opacity = '1';
+          el.classList.add('flow-glow');
+          targetEls.push(el);
+        }
+      });
+    } else if (step.id === 'carriers_group') {
+      CARRIER_IDS.forEach(function (cid) {
+        var el = document.querySelector('.carrier-mini[data-id="' + cid + '"]');
+        if (el) {
+          el.style.opacity = '1';
+          el.classList.add('flow-glow');
+          targetEls.push(el);
+        }
+      });
+      /* Also highlight carrier_connector */
+      var ccEl = document.querySelector('.card[data-id="carrier_connector"]');
+      if (ccEl) {
+        ccEl.style.opacity = '1';
+        ccEl.classList.add('flow-glow');
+      }
+    } else {
+      var el = document.querySelector('.card[data-id="' + step.id + '"]');
+      if (el) {
+        el.style.opacity = '1';
+        el.classList.add('flow-glow');
+        targetEls.push(el);
+      }
+    }
+
+    /* Animate traveling dot to target */
+    if (idx > 0 && targetEls.length > 0) {
+      var prevStep = WT_STEPS[idx - 1];
+      var fromEl = document.querySelector('.card[data-id="' + prevStep.id + '"]');
+      if (prevStep.id === 'carriers_group') {
+        fromEl = document.querySelector('.carrier-mini[data-id="aviva"]');
+      }
+      if (fromEl && targetEls[0]) {
+        animateWtDot(fromEl, targetEls[0]);
+      }
+    }
+
+    /* Position callout card */
+    var callout = document.getElementById('wt-callout');
+    callout.classList.remove('visible');
+
+    var refEl = targetEls[0] || document.querySelector('.card[data-id="' + step.id + '"]');
+    if (!refEl && step.id === 'carriers_group') {
+      refEl = document.querySelector('.carrier-mini[data-id="aviva"]');
+    }
+
+    var calloutHTML =
+      '<div class="wt-callout-header">' +
+        '<div class="wt-callout-title">' + esc(step.title) + '</div>' +
+        '<div class="wt-callout-step">Step ' + (idx + 1) + ' of ' + WT_STEPS.length + '</div>' +
+      '</div>' +
+      '<div class="wt-callout-text">' + esc(step.text) + '</div>' +
+      '<div class="wt-callout-format">' + esc(step.format) + '</div>' +
+      (step.next ? '<div class="wt-callout-next"><span class="next-arrow">\u2192</span> Next: ' + esc(step.next) + '</div>' : '') +
+      '<div class="wt-callout-controls">' +
+        '<button class="wt-btn" id="wt-prev-btn">\u25C0 Prev</button>' +
+        '<button class="wt-btn" id="wt-pause-btn">' + (wtState.playing ? '\u275A\u275A Pause' : '\u25B6 Play') + '</button>' +
+        '<div class="wt-btn-spacer"></div>' +
+        '<button class="wt-btn primary" id="wt-next-btn">Next \u25B6</button>' +
+      '</div>';
+
+    callout.innerHTML = calloutHTML;
+
+    /* Position the callout */
+    if (refEl) {
+      var refRect = refEl.getBoundingClientRect();
+      var calloutLeft = refRect.right + 20;
+      var calloutTop = refRect.top;
+
+      /* If would go off right side, position to the left */
+      if (calloutLeft + 340 > window.innerWidth) {
+        calloutLeft = refRect.left - 360;
+        if (calloutLeft < 10) calloutLeft = 10;
+      }
+      /* If would go off bottom */
+      if (calloutTop + 300 > window.innerHeight) {
+        calloutTop = window.innerHeight - 320;
+      }
+      if (calloutTop < 60) calloutTop = 60;
+
+      callout.style.left = calloutLeft + 'px';
+      callout.style.top = calloutTop + 'px';
+      callout.style.right = 'auto';
+    }
+
+    requestAnimationFrame(function () {
+      callout.classList.add('visible');
+    });
+
+    /* Scroll the highlighted element into view */
+    if (refEl) {
+      refEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    /* Bind callout buttons */
+    setTimeout(function () {
+      var prevBtn = document.getElementById('wt-prev-btn');
+      var nextBtn = document.getElementById('wt-next-btn');
+      var pauseBtn = document.getElementById('wt-pause-btn');
+      if (prevBtn) prevBtn.addEventListener('click', function (e) { e.stopPropagation(); wtPrevStep(); });
+      if (nextBtn) nextBtn.addEventListener('click', function (e) { e.stopPropagation(); wtNextStep(); });
+      if (pauseBtn) pauseBtn.addEventListener('click', function (e) { e.stopPropagation(); pauseWalkthrough(); });
+    }, 50);
+  }
+
+  function animateWtDot(fromEl, toEl) {
+    var wrapper = document.getElementById('canvas-wrapper');
+    var dot     = document.getElementById('glow-dot');
+
+    var wrapperRect = wrapper.getBoundingClientRect();
+    var fromR = fromEl.getBoundingClientRect();
+    var toR   = toEl.getBoundingClientRect();
+
+    var x1 = fromR.left + fromR.width / 2 - wrapperRect.left;
+    var y1 = fromR.bottom - wrapperRect.top;
+    var x2 = toR.left + toR.width / 2 - wrapperRect.left;
+    var y2 = toR.top - wrapperRect.top;
+
+    dot.style.transition = 'none';
+    dot.style.left = (x1 - 6) + 'px';
+    dot.style.top  = (y1 - 6) + 'px';
+    dot.classList.add('visible');
+
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        dot.style.transition = 'left 1s ease-in-out, top 1s ease-in-out';
+        dot.style.left = (x2 - 6) + 'px';
+        dot.style.top  = (y2 - 6) + 'px';
+      });
+    });
+  }
+
+  function showWtSummary() {
+    document.getElementById('wt-callout').classList.remove('visible');
+    clearWtHighlights();
+
+    /* Restore card opacity */
+    document.querySelectorAll('.card').forEach(function (c) { c.style.opacity = ''; });
+    document.querySelectorAll('.carrier-mini').forEach(function (c) { c.style.opacity = ''; });
+
+    var summary = document.getElementById('wt-summary');
+    summary.innerHTML =
+      '<div class="wt-check">\u2705</div>' +
+      '<h2>End-to-end quote flow complete</h2>' +
+      '<div class="wt-summary-stats">' +
+        '<div class="wt-summary-stat"><span class="stat-icon">\u2699\uFE0F</span> Total components: 7 services</div>' +
+        '<div class="wt-summary-stat"><span class="stat-icon">\uD83D\uDCE6</span> Data formats: JSON DTO \u2192 CSIO XML \u2192 Rating Response</div>' +
+        '<div class="wt-summary-stat"><span class="stat-icon">\uD83D\uDCE8</span> 3 Service Bus queues coordinate async processing</div>' +
+        '<div class="wt-summary-stat critical"><span class="stat-icon">\u26A0\uFE0F</span> Critical gap: Manufactured Rating has zero code</div>' +
+      '</div>' +
+      '<div class="wt-summary-actions">' +
+        '<button class="wt-btn" id="wt-close-btn">Close</button>' +
+        '<button class="wt-btn primary" id="wt-replay-btn">\u21BB Replay</button>' +
+      '</div>';
+
+    summary.classList.add('visible');
+
+    setTimeout(function () {
+      var closeBtn = document.getElementById('wt-close-btn');
+      var replayBtn = document.getElementById('wt-replay-btn');
+      if (closeBtn) closeBtn.addEventListener('click', function () { stopWalkthrough(); });
+      if (replayBtn) replayBtn.addEventListener('click', function () {
+        summary.classList.remove('visible');
+        startWalkthrough();
+      });
+    }, 50);
+  }
+
+  /* ── Event Listeners ──────────────────────────── */
+  document.querySelectorAll('.tab').forEach(function (t) {
+    t.addEventListener('click', function () { switchView(t.dataset.view); });
+  });
+
+  document.getElementById('detail-close').addEventListener('click', closeDetail);
+  document.getElementById('detail-overlay').addEventListener('click', closeDetail);
+  document.getElementById('walkthrough-overlay').addEventListener('click', function () { stopWalkthrough(); });
+  document.getElementById('watch-flow-btn').addEventListener('click', function () { startWalkthrough(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if (wtState.active) {
+        stopWalkthrough();
+      } else {
+        closeDetail();
+      }
+    }
+  });
+
+  /* ── Init ─────────────────────────────────────── */
+  function init() {
+    renderPipeline();
+    renderSupporting();
+    initFlowControls();
+
+    /* Draw connections after layout settles */
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        drawConnections();
+      });
+    });
+
+    /* Redraw on resize */
+    var resizeTimer;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(drawConnections, 150);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
