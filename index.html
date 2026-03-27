@@ -349,6 +349,189 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
   .fork-branches{flex-direction:column;gap:20px;align-items:center}
   .wt-callout{max-width:90vw;left:5vw!important;right:5vw!important}
 }
+
+/* ── Full-Page Detail View ────────────────────── */
+.full-view-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;color:#4f8fff;cursor:pointer;border:1px solid rgba(79,143,255,.3);background:rgba(79,143,255,.08);transition:all .2s;white-space:nowrap;margin-left:8px}
+.full-view-btn:hover{background:rgba(79,143,255,.15);border-color:#4f8fff}
+
+.full-view {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: #0d1117;
+  overflow-y: auto;
+  animation: fadeIn 0.3s ease;
+}
+.full-view.open { display: block; }
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+.full-view-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 32px;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+}
+
+.full-view-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.fv-crumb { color: #7d8590; cursor: pointer; }
+.fv-crumb:hover { color: #4f8fff; }
+.fv-crumb.active { color: #e6edf3; cursor: default; }
+.fv-sep { color: #30363d; }
+.fv-close { background: none; border: none; color: #7d8590; font-size: 24px; cursor: pointer; padding: 4px 8px; }
+.fv-close:hover { color: #e6edf3; }
+
+.full-view-hero {
+  padding: 32px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.fv-hero-title { font-size: 28px; font-weight: 700; color: #e6edf3; margin-bottom: 8px; }
+.fv-hero-subtitle { font-size: 15px; color: #7d8590; margin-bottom: 16px; line-height: 1.5; }
+.fv-hero-stats { display: flex; gap: 24px; flex-wrap: wrap; }
+.fv-hero-stat { text-align: center; }
+.fv-hero-stat-value { font-size: 24px; font-weight: 700; color: #e6edf3; }
+.fv-hero-stat-label { font-size: 12px; color: #7d8590; margin-top: 2px; }
+
+.full-view-tabs {
+  position: sticky;
+  top: 49px;
+  z-index: 9;
+  display: flex;
+  gap: 0;
+  padding: 0 32px;
+  background: #0d1117;
+  border-bottom: 1px solid #30363d;
+  max-width: 1064px;
+  margin: 0 auto;
+}
+
+.fv-tab {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #7d8590;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.fv-tab:hover { color: #e6edf3; }
+.fv-tab.active { color: #e6edf3; border-bottom-color: #4f8fff; }
+
+.full-view-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px 32px 60px;
+}
+
+.fv-section {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.fv-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #e6edf3;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fv-timeline { position: relative; padding-left: 24px; }
+.fv-timeline::before { content: ''; position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: #30363d; }
+.fv-timeline-item { position: relative; padding-bottom: 20px; }
+.fv-timeline-dot { position: absolute; left: -20px; top: 4px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #30363d; background: #0d1117; }
+.fv-timeline-dot.active { border-color: #4f8fff; background: #4f8fff; }
+.fv-timeline-dot.warning { border-color: #d29922; background: #d29922; }
+.fv-timeline-dot.critical { border-color: #f85149; background: #f85149; }
+.fv-timeline-date { font-size: 12px; color: #7d8590; margin-bottom: 4px; }
+.fv-timeline-title { font-size: 14px; color: #e6edf3; font-weight: 600; }
+.fv-timeline-desc { font-size: 13px; color: #7d8590; margin-top: 4px; line-height: 1.5; }
+
+.fv-health-gauge {
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; font-weight: 700; color: #e6edf3;
+  position: relative;
+  margin: 0 auto 16px;
+}
+.fv-health-label { text-align: center; font-size: 14px; color: #7d8590; }
+
+.fv-health-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+.fv-health-card {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+.fv-health-card-value { font-size: 18px; font-weight: 700; color: #e6edf3; }
+.fv-health-card-label { font-size: 12px; color: #7d8590; margin-top: 4px; }
+.fv-health-card-indicator { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+
+.fv-insight {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-left: 4px solid #484f58;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.fv-insight.critical { border-left-color: #f85149; }
+.fv-insight.warning { border-left-color: #d29922; }
+.fv-insight.info { border-left-color: #4f8fff; }
+.fv-insight-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.fv-insight-severity {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+}
+.fv-insight-severity.critical { background: rgba(248,81,73,0.15); color: #f85149; }
+.fv-insight-severity.warning { background: rgba(210,153,34,0.15); color: #d29922; }
+.fv-insight-severity.info { background: rgba(79,143,255,0.15); color: #4f8fff; }
+.fv-insight-category { font-size: 11px; color: #7d8590; }
+.fv-insight-title { font-size: 14px; font-weight: 600; color: #e6edf3; }
+.fv-insight-desc { font-size: 13px; color: #7d8590; line-height: 1.5; margin-top: 8px; }
+.fv-insight-evidence { font-size: 12px; color: #7d8590; margin-top: 8px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; font-family: monospace; }
+.fv-insight-rec { font-size: 13px; color: #3fb950; margin-top: 8px; }
+.fv-insight-rec::before { content: '\2192 '; }
+
+.fv-narrative {
+  font-size: 15px; line-height: 1.7; color: #c9d1d9;
+  padding: 20px;
+  background: rgba(79,143,255,0.05);
+  border: 1px solid rgba(79,143,255,0.15);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.fv-insight-summary {
+  display: flex; gap: 16px; margin-bottom: 20px; padding: 12px 16px;
+  background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+}
+.fv-insight-count { font-size: 14px; font-weight: 600; }
+.fv-insight-count.critical { color: #f85149; }
+.fv-insight-count.warning { color: #d29922; }
+.fv-insight-count.info { color: #4f8fff; }
+
+@media(max-width:900px){
+  .full-view-hero{padding:20px 16px}
+  .full-view-content{padding:16px 16px 40px}
+  .full-view-header{padding:12px 16px}
+  .full-view-tabs{padding:0 16px}
+  .fv-health-grid{grid-template-columns:repeat(2,1fr)}
+}
 </style>
 </head>
 <body>
@@ -394,6 +577,28 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
     <div class="detail-body" id="detail-body"></div>
   </div>
 
+  <!-- Full-page detail view overlay -->
+  <div id="full-view" class="full-view">
+    <div class="full-view-header">
+      <div class="full-view-breadcrumb">
+        <span class="fv-crumb" onclick="window._closeFullView()">Architecture Explorer</span>
+        <span class="fv-sep">&rsaquo;</span>
+        <span class="fv-crumb active" id="fv-title">Component Name</span>
+      </div>
+      <button class="fv-close" onclick="window._closeFullView()">&times;</button>
+    </div>
+
+    <div class="full-view-hero" id="fv-hero"></div>
+
+    <div class="full-view-tabs" id="fv-tabs">
+      <button class="fv-tab active" data-tab="story">Story</button>
+      <button class="fv-tab" data-tab="health">Health</button>
+      <button class="fv-tab" data-tab="insights">Insights</button>
+    </div>
+
+    <div class="full-view-content" id="fv-content"></div>
+  </div>
+
   <div id="flow-controls">
     <select class="flow-select" id="flow-select"></select>
     <button class="flow-btn" id="flow-prev" title="Previous step">&#9664;</button>
@@ -412,6 +617,7 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
   <div class="wt-summary" id="wt-summary"></div>
 </div>
 
+<script src="insights-data.js"></script>
 <script src="data.js"></script>
 <script>
 (function () {
@@ -1041,6 +1247,17 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
 
     activeCard = id;
     dimCards(id);
+
+    var detailHeader = document.querySelector('.detail-header');
+    /* Remove any existing full-view button */
+    var existingFvBtn = detailHeader.querySelector('.full-view-btn');
+    if (existingFvBtn) existingFvBtn.remove();
+    /* Add full view button */
+    var fvBtn = document.createElement('button');
+    fvBtn.className = 'full-view-btn';
+    fvBtn.textContent = 'Open Full View \u2192';
+    fvBtn.addEventListener('click', function (e) { e.stopPropagation(); showFullView(id); });
+    detailHeader.appendChild(fvBtn);
 
     document.getElementById('detail-title').textContent = nd.label;
     document.getElementById('detail-type').textContent  = TYPE_LABELS[nd.type] || nd.type || '';
@@ -1722,13 +1939,470 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
   document.getElementById('watch-flow-btn').addEventListener('click', function () { startWalkthrough(); });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
-      if (wtState.active) {
+      if (document.getElementById('full-view').classList.contains('open')) {
+        closeFullView();
+      } else if (wtState.active) {
         stopWalkthrough();
       } else {
         closeDetail();
       }
     }
   });
+
+  /* ═══════════════════════════════════════════════
+     ── FULL-PAGE DETAIL VIEW ──
+     ═══════════════════════════════════════════════ */
+
+  var currentFullViewNodeId = null;
+
+  function showFullView(nodeId) {
+    currentFullViewNodeId = nodeId;
+    var node = nodeById(nodeId);
+    if (!node) return;
+
+    /* Close the side panel if open */
+    closeDetail();
+
+    var fullView = document.getElementById('full-view');
+    fullView.classList.add('open');
+    fullView.scrollTop = 0;
+
+    /* Set URL hash */
+    window.location.hash = 'detail/' + nodeId;
+
+    /* Set breadcrumb title */
+    document.getElementById('fv-title').textContent = node.data.label;
+
+    /* Render hero and default tab */
+    renderFullViewHero(nodeId);
+    renderFullViewTab('story', nodeId);
+
+    /* Bind tab click handlers */
+    var tabs = document.querySelectorAll('#fv-tabs .fv-tab');
+    tabs.forEach(function (tab) {
+      /* Clone to remove old listeners */
+      var newTab = tab.cloneNode(true);
+      tab.parentNode.replaceChild(newTab, tab);
+    });
+    document.querySelectorAll('#fv-tabs .fv-tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        document.querySelectorAll('#fv-tabs .fv-tab').forEach(function (t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        renderFullViewTab(tab.getAttribute('data-tab'), currentFullViewNodeId);
+      });
+    });
+
+    /* Reset tabs to story active */
+    document.querySelectorAll('#fv-tabs .fv-tab').forEach(function (t) {
+      t.classList.toggle('active', t.getAttribute('data-tab') === 'story');
+    });
+  }
+
+  function closeFullView() {
+    var fullView = document.getElementById('full-view');
+    fullView.classList.remove('open');
+    fullView.scrollTop = 0;
+    currentFullViewNodeId = null;
+    if (window.location.hash.indexOf('#detail/') === 0) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }
+
+  /* Expose globally for onclick handlers in HTML */
+  window._closeFullView = closeFullView;
+
+  function renderFullViewHero(nodeId) {
+    var node = nodeById(nodeId);
+    if (!node) return;
+    var nd = node.data;
+    var meta = metaFor(nodeId);
+    var st = statusFor(nodeId);
+    var enrichment = getEnrichment(nodeId);
+
+    var hero = document.getElementById('fv-hero');
+    var html = '';
+
+    /* Status badge */
+    if (st) {
+      var sc = getStatusClass(st);
+      var sl = getStatusLabel(st);
+      html += '<div class="status-badge-lg ' + sc + '"><span class="status-dot-lg ' + sc + '"></span>' + esc(sl) + '</div>';
+    }
+
+    /* Title */
+    html += '<div class="fv-hero-title">' + esc(nd.label) + '</div>';
+
+    /* Subtitle - What This Does */
+    var subtitle = WHAT_THIS_DOES[nodeId] || meta.description || TYPE_LABELS[nd.type] || '';
+    html += '<div class="fv-hero-subtitle">' + esc(subtitle) + '</div>';
+
+    /* Stats row */
+    var commitCount = (st && st.commits) ? st.commits : (enrichment && enrichment.commitCount != null ? enrichment.commitCount : '\u2014');
+    var contribCount = (meta.contributors && meta.contributors.length) ? meta.contributors.length : (enrichment && enrichment.contributorCount != null ? enrichment.contributorCount : '\u2014');
+    var lastActive = (st && st.lastCommit) ? st.lastCommit : (enrichment && enrichment.lastActive ? relativeDate(enrichment.lastActive) : '\u2014');
+    var fileCount = (meta.files != null) ? meta.files : (enrichment && enrichment.files != null ? enrichment.files : '\u2014');
+
+    html += '<div class="fv-hero-stats">' +
+      '<div class="fv-hero-stat"><div class="fv-hero-stat-value">' + esc(String(commitCount)) + '</div><div class="fv-hero-stat-label">Commits</div></div>' +
+      '<div class="fv-hero-stat"><div class="fv-hero-stat-value">' + esc(String(contribCount)) + '</div><div class="fv-hero-stat-label">Contributors</div></div>' +
+      '<div class="fv-hero-stat"><div class="fv-hero-stat-value" style="font-size:16px">' + esc(String(lastActive)) + '</div><div class="fv-hero-stat-label">Last Active</div></div>' +
+      '<div class="fv-hero-stat"><div class="fv-hero-stat-value">' + esc(String(fileCount)) + '</div><div class="fv-hero-stat-label">Files</div></div>' +
+      '</div>';
+
+    hero.innerHTML = html;
+  }
+
+  function renderFullViewTab(tabName, nodeId) {
+    var content = document.getElementById('fv-content');
+    if (tabName === 'story') {
+      content.innerHTML = renderStoryTab(nodeId);
+    } else if (tabName === 'health') {
+      content.innerHTML = renderHealthTab(nodeId);
+    } else if (tabName === 'insights') {
+      content.innerHTML = renderInsightsTab(nodeId);
+    }
+  }
+
+  /* ── Story Tab ──────────────────────────────── */
+  function renderStoryTab(nodeId) {
+    var node = nodeById(nodeId);
+    if (!node) return '';
+    var nd = node.data;
+    var meta = metaFor(nodeId);
+    var enrichment = getEnrichment(nodeId);
+    var insightsData = window.INSIGHTS_DATA || null;
+    var html = '';
+
+    /* Narrative block */
+    var narrative = '';
+    if (insightsData && insightsData.stories && insightsData.stories[nodeId] && insightsData.stories[nodeId].narrative) {
+      narrative = insightsData.stories[nodeId].narrative;
+    } else if (WHAT_THIS_DOES[nodeId]) {
+      narrative = WHAT_THIS_DOES[nodeId];
+    } else if (meta.description) {
+      narrative = meta.description;
+    }
+    if (narrative) {
+      html += '<div class="fv-narrative">' + esc(narrative) + '</div>';
+    }
+
+    /* Timeline */
+    html += '<div class="fv-section"><div class="fv-section-title">Timeline</div>';
+
+    var timelineItems = [];
+
+    /* Check INSIGHTS_DATA for phases first */
+    if (insightsData && insightsData.stories && insightsData.stories[nodeId] && insightsData.stories[nodeId].phases) {
+      insightsData.stories[nodeId].phases.forEach(function (phase) {
+        timelineItems.push({
+          date: phase.date || '',
+          title: phase.title || '',
+          desc: phase.description || '',
+          dotClass: phase.dotClass || 'active'
+        });
+      });
+    } else if (enrichment && enrichment.commits && enrichment.commits.length) {
+      /* Build from enrichment commits data */
+      var commits = enrichment.commits.slice().sort(function (a, b) {
+        return new Date(a.date || a.authorDate || 0) - new Date(b.date || b.authorDate || 0);
+      });
+
+      /* First commit (birth) */
+      if (commits.length > 0) {
+        var first = commits[0];
+        var firstMsg = (first.message || first.comment || '').split('\n')[0];
+        timelineItems.push({
+          date: relativeDate(first.date || first.authorDate),
+          title: 'Project Created',
+          desc: firstMsg,
+          dotClass: 'active'
+        });
+      }
+
+      /* Key feature commits */
+      var featurePattern = /\b(add|implement|feature|integrate|create|introduce|initial)\b/i;
+      commits.forEach(function (c) {
+        var msg = (c.message || c.comment || '').split('\n')[0];
+        if (featurePattern.test(msg)) {
+          timelineItems.push({
+            date: relativeDate(c.date || c.authorDate),
+            title: msg.length > 60 ? msg.substring(0, 57) + '...' : msg,
+            desc: (c.author || c.authorName || 'Unknown'),
+            dotClass: 'active'
+          });
+        }
+      });
+
+      /* Limit to avoid overwhelming timeline */
+      if (timelineItems.length > 8) {
+        timelineItems = [timelineItems[0]].concat(timelineItems.slice(timelineItems.length - 7));
+      }
+
+      /* Recent PR merges */
+      if (enrichment.pullRequests && enrichment.pullRequests.length) {
+        enrichment.pullRequests.slice(0, 3).forEach(function (pr) {
+          var status = (pr.status || '').toLowerCase();
+          if (status === 'completed' || status === 'merged') {
+            timelineItems.push({
+              date: relativeDate(pr.date || pr.closedDate || pr.creationDate),
+              title: 'PR Merged: ' + (pr.title || 'Untitled'),
+              desc: pr.author || pr.createdBy || '',
+              dotClass: 'active'
+            });
+          }
+        });
+      }
+
+      /* Current state */
+      if (commits.length > 0) {
+        var lastCommit = commits[commits.length - 1];
+        var lastDate = new Date(lastCommit.date || lastCommit.authorDate || 0);
+        var daysSince = Math.floor((new Date() - lastDate) / 86400000);
+        var stateTitle = daysSince > 30 ? (daysSince + ' days since last activity') : ('Active - last commit ' + relativeDate(lastCommit.date || lastCommit.authorDate));
+        var stateDot = daysSince > 30 ? 'warning' : 'active';
+        if (daysSince > 90) stateDot = 'critical';
+        timelineItems.push({
+          date: 'Current',
+          title: stateTitle,
+          desc: '',
+          dotClass: stateDot
+        });
+      }
+    } else {
+      /* No data available */
+      timelineItems.push({
+        date: '',
+        title: 'No timeline data available',
+        desc: 'Activity data has not been collected for this component yet.',
+        dotClass: 'warning'
+      });
+    }
+
+    html += '<div class="fv-timeline">';
+    timelineItems.forEach(function (item) {
+      html += '<div class="fv-timeline-item">' +
+        '<div class="fv-timeline-dot ' + item.dotClass + '"></div>' +
+        (item.date ? '<div class="fv-timeline-date">' + esc(item.date) + '</div>' : '') +
+        '<div class="fv-timeline-title">' + esc(item.title) + '</div>' +
+        (item.desc ? '<div class="fv-timeline-desc">' + esc(item.desc) + '</div>' : '') +
+        '</div>';
+    });
+    html += '</div></div>';
+
+    return html;
+  }
+
+  /* ── Health Tab ─────────────────────────────── */
+  function renderHealthTab(nodeId) {
+    var node = nodeById(nodeId);
+    if (!node) return '';
+    var meta = metaFor(nodeId);
+    var st = statusFor(nodeId);
+    var enrichment = getEnrichment(nodeId);
+    var insightsData = window.INSIGHTS_DATA || null;
+    var html = '';
+
+    /* Calculate health score */
+    var healthScore = 0;
+    var healthLabel = 'Unknown';
+    var gaugeColor = '#484f58';
+
+    /* Determine last active date (used in multiple places) */
+    var lastActiveDate = null;
+    if (enrichment && enrichment.lastActive) {
+      lastActiveDate = new Date(enrichment.lastActive);
+    } else if (enrichment && enrichment.commits && enrichment.commits.length) {
+      var sortedForDate = enrichment.commits.slice().sort(function (a, b) {
+        return new Date(b.date || b.authorDate || 0) - new Date(a.date || a.authorDate || 0);
+      });
+      lastActiveDate = new Date(sortedForDate[0].date || sortedForDate[0].authorDate);
+    }
+
+    if (insightsData && insightsData.healthScores && insightsData.healthScores[nodeId] != null) {
+      healthScore = insightsData.healthScores[nodeId];
+    } else {
+      /* Compute from available data */
+      var activityScore = 0;
+      var ciScore = 0;
+      var deployScore = 0;
+      var blockerScore = 0;
+
+      /* Activity: days since last commit */
+      if (lastActiveDate) {
+        var daysSince = Math.floor((new Date() - lastActiveDate) / 86400000);
+        if (daysSince < 7) activityScore = 25;
+        else if (daysSince < 30) activityScore = 15;
+        else activityScore = 5;
+      }
+
+      /* CI pipeline */
+      if (st && st.ciPipeline) ciScore = 25;
+
+      /* Deployment */
+      if (st && st.deployed) deployScore = 25;
+
+      /* Blocker-free */
+      if (!st || !st.blocker) blockerScore = 25;
+
+      healthScore = activityScore + ciScore + deployScore + blockerScore;
+    }
+
+    if (healthScore >= 80) { healthLabel = 'Healthy'; gaugeColor = '#3fb950'; }
+    else if (healthScore >= 50) { healthLabel = 'Fair'; gaugeColor = '#d29922'; }
+    else { healthLabel = 'Needs Attention'; gaugeColor = '#f85149'; }
+
+    /* Health gauge with conic-gradient */
+    var gaugePct = Math.min(healthScore, 100);
+    html += '<div class="fv-section">';
+    html += '<div class="fv-section-title">Overall Health Score</div>';
+    html += '<div class="fv-health-gauge" style="background: conic-gradient(' + gaugeColor + ' ' + (gaugePct * 3.6) + 'deg, #21262d ' + (gaugePct * 3.6) + 'deg 360deg);">' +
+      '<div style="width:96px;height:96px;border-radius:50%;background:#0d1117;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:' + gaugeColor + '">' + healthScore + '</div>' +
+      '</div>';
+    html += '<div class="fv-health-label">' + esc(healthLabel) + '</div>';
+    html += '</div>';
+
+    /* Health cards grid */
+    html += '<div class="fv-section"><div class="fv-section-title">Health Breakdown</div>';
+    html += '<div class="fv-health-grid">';
+
+    /* Build Status */
+    var buildStatus = '\u2014';
+    var buildColor = '#484f58';
+    if (enrichment && enrichment.builds && enrichment.builds.length) {
+      var lastBuild = enrichment.builds[0];
+      var result = (lastBuild.result || lastBuild.status || '').toLowerCase();
+      if (result === 'succeeded' || result === 'success') { buildStatus = 'Passing'; buildColor = '#3fb950'; }
+      else if (result === 'failed') { buildStatus = 'Failing'; buildColor = '#f85149'; }
+      else { buildStatus = result || 'Unknown'; buildColor = '#d29922'; }
+    } else if (!st || !st.ciPipeline) {
+      buildStatus = 'No Pipeline';
+      buildColor = '#484f58';
+    }
+    html += '<div class="fv-health-card"><div class="fv-health-card-value"><span class="fv-health-card-indicator" style="background:' + buildColor + '"></span>' + esc(buildStatus) + '</div><div class="fv-health-card-label">Build Status</div></div>';
+
+    /* Deployment */
+    var deployLabel = 'Not Deployed';
+    var deployColor = '#484f58';
+    if (st && st.deployed) { deployLabel = 'Deployed'; deployColor = '#3fb950'; }
+    else if (st && st.code === 'functional') { deployLabel = 'Not Deployed'; deployColor = '#d29922'; }
+    html += '<div class="fv-health-card"><div class="fv-health-card-value"><span class="fv-health-card-indicator" style="background:' + deployColor + '"></span>' + esc(deployLabel) + '</div><div class="fv-health-card-label">Deployment</div></div>';
+
+    /* Activity Level */
+    var activityLabel = 'Unknown';
+    var activityColor = '#484f58';
+    if (lastActiveDate) {
+      var daysSinceAct = Math.floor((new Date() - lastActiveDate) / 86400000);
+      if (daysSinceAct < 7) { activityLabel = 'Active'; activityColor = '#3fb950'; }
+      else if (daysSinceAct < 30) { activityLabel = 'Moderate'; activityColor = '#d29922'; }
+      else { activityLabel = 'Inactive (' + daysSinceAct + 'd)'; activityColor = '#f85149'; }
+    } else {
+      /* Try from status data */
+      if (st && st.lastCommit) { activityLabel = st.lastCommit; activityColor = '#d29922'; }
+    }
+    html += '<div class="fv-health-card"><div class="fv-health-card-value"><span class="fv-health-card-indicator" style="background:' + activityColor + '"></span>' + esc(activityLabel) + '</div><div class="fv-health-card-label">Activity Level</div></div>';
+
+    /* CI Pipeline */
+    var ciLabel = 'None';
+    var ciColor = '#484f58';
+    if (st && st.ciPipeline) { ciLabel = 'Configured'; ciColor = '#3fb950'; }
+    html += '<div class="fv-health-card"><div class="fv-health-card-value"><span class="fv-health-card-indicator" style="background:' + ciColor + '"></span>' + esc(ciLabel) + '</div><div class="fv-health-card-label">CI Pipeline</div></div>';
+
+    /* Blockers */
+    var blockerLabel = 'None';
+    var blockerColor = '#3fb950';
+    if (st && st.blocker) { blockerLabel = 'Has Blocker'; blockerColor = '#f85149'; }
+    html += '<div class="fv-health-card"><div class="fv-health-card-value"><span class="fv-health-card-indicator" style="background:' + blockerColor + '"></span>' + esc(blockerLabel) + '</div><div class="fv-health-card-label">Blockers</div></div>';
+
+    /* Bus Factor */
+    var busFactor = '\u2014';
+    var busColor = '#484f58';
+    if (meta.contributors && meta.contributors.length) {
+      busFactor = String(meta.contributors.length);
+      if (meta.contributors.length >= 3) busColor = '#3fb950';
+      else if (meta.contributors.length === 2) busColor = '#d29922';
+      else busColor = '#f85149';
+    } else if (enrichment && enrichment.contributorCount != null) {
+      busFactor = String(enrichment.contributorCount);
+      if (enrichment.contributorCount >= 3) busColor = '#3fb950';
+      else if (enrichment.contributorCount === 2) busColor = '#d29922';
+      else busColor = '#f85149';
+    }
+    html += '<div class="fv-health-card"><div class="fv-health-card-value"><span class="fv-health-card-indicator" style="background:' + busColor + '"></span>' + esc(busFactor) + '</div><div class="fv-health-card-label">Bus Factor</div></div>';
+
+    html += '</div></div>';
+
+    return html;
+  }
+
+  /* ── Insights Tab ──────────────────────────── */
+  function renderInsightsTab(nodeId) {
+    var insightsData = window.INSIGHTS_DATA || null;
+    if (!insightsData) {
+      return '<div class="fv-section"><div class="fv-section-title">Insights</div>' +
+        '<div class="enrich-notice">Insights not yet generated. They will appear after the next architecture review.</div></div>';
+    }
+
+    var html = '';
+    var serviceInsights = (insightsData.services && insightsData.services[nodeId]) || [];
+
+    /* Also gather cross-component insights that affect this service */
+    var crossInsights = [];
+    if (insightsData.crossComponent && Array.isArray(insightsData.crossComponent)) {
+      insightsData.crossComponent.forEach(function (insight) {
+        if (insight.affectedComponents && insight.affectedComponents.indexOf(nodeId) >= 0) {
+          crossInsights.push(insight);
+        }
+      });
+    }
+
+    var allInsights = serviceInsights.concat(crossInsights);
+
+    if (allInsights.length === 0) {
+      return '<div class="fv-section"><div class="fv-section-title">Insights</div>' +
+        '<div style="font-size:14px;color:#7d8590;padding:12px 0;">No insights found for this component.</div></div>';
+    }
+
+    /* Count by severity */
+    var critCount = 0, warnCount = 0, infoCount = 0;
+    allInsights.forEach(function (i) {
+      var sev = (i.severity || '').toLowerCase();
+      if (sev === 'critical') critCount++;
+      else if (sev === 'warning') warnCount++;
+      else infoCount++;
+    });
+
+    /* Summary bar */
+    html += '<div class="fv-insight-summary">';
+    if (critCount > 0) html += '<span class="fv-insight-count critical">' + critCount + ' Critical</span>';
+    if (warnCount > 0) html += '<span class="fv-insight-count warning">' + warnCount + ' Warning' + (warnCount > 1 ? 's' : '') + '</span>';
+    if (infoCount > 0) html += '<span class="fv-insight-count info">' + infoCount + ' Info</span>';
+    html += '</div>';
+
+    /* Sort: critical first, then warning, then info */
+    var severityOrder = { critical: 0, warning: 1, info: 2 };
+    allInsights.sort(function (a, b) {
+      var sa = severityOrder[(a.severity || '').toLowerCase()] != null ? severityOrder[(a.severity || '').toLowerCase()] : 3;
+      var sb = severityOrder[(b.severity || '').toLowerCase()] != null ? severityOrder[(b.severity || '').toLowerCase()] : 3;
+      return sa - sb;
+    });
+
+    /* Render insight cards */
+    allInsights.forEach(function (insight) {
+      var sev = (insight.severity || 'info').toLowerCase();
+      html += '<div class="fv-insight ' + sev + '">';
+      html += '<div class="fv-insight-header">';
+      html += '<span class="fv-insight-severity ' + sev + '">' + esc(sev) + '</span>';
+      if (insight.category) html += '<span class="fv-insight-category">' + esc(insight.category) + '</span>';
+      html += '</div>';
+      if (insight.title) html += '<div class="fv-insight-title">' + esc(insight.title) + '</div>';
+      if (insight.description) html += '<div class="fv-insight-desc">' + esc(insight.description) + '</div>';
+      if (insight.evidence) html += '<div class="fv-insight-evidence">' + esc(insight.evidence) + '</div>';
+      if (insight.recommendation) html += '<div class="fv-insight-rec">' + esc(insight.recommendation) + '</div>';
+      html += '</div>';
+    });
+
+    return html;
+  }
 
   /* ── Init ─────────────────────────────────────── */
   function init() {
@@ -1749,6 +2423,15 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(drawConnections, 150);
     });
+
+    /* URL hash routing - auto-open full view if hash matches */
+    var hash = window.location.hash;
+    if (hash && hash.indexOf('#detail/') === 0) {
+      var hashNodeId = hash.substring(8);
+      if (nodeById(hashNodeId)) {
+        setTimeout(function () { showFullView(hashNodeId); }, 300);
+      }
+    }
   }
 
   if (document.readyState === 'loading') {
