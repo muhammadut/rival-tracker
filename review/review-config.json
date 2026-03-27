@@ -1,0 +1,139 @@
+{
+  "reposRoot": "/Users/tariqusama/Documents/azure_devops/knowledge/repos",
+  "outputFile": "../insights-data.js",
+
+  "services": {
+    "quote_mgmt": {
+      "repo": "Rival.Quoting.API.QuoteManagement",
+      "type": "api",
+      "keyFiles": [
+        "Rival.Quoting.API.QuoteManagement/Program.cs",
+        "Rival.Quoting.API.QuoteManagement/Controllers/QuotesController.cs",
+        "Rival.Quoting.API.QuoteManagement/Services/QuoteService.cs",
+        "Rival.Quoting.API.QuoteManagement/Services/RatingSubmissionService.cs",
+        "Rival.Quoting.API.QuoteManagement/Services/RatingResponseHandlerService.cs",
+        "Rival.Quoting.API.QuoteManagement/appsettings.json",
+        "Rival.Quoting.API.QuoteManagement/appsettings.Development.json"
+      ]
+    },
+    "orchestrator": {
+      "repo": "Rival.Rating.API.RatingOrchestrator",
+      "type": "worker",
+      "keyFiles": [
+        "Rival.Rating.API.RatingOrchestrator/Program.cs",
+        "Rival.Rating.API.RatingOrchestrator/BackgroundServices/RatingOrchestratorService.cs",
+        "Rival.Rating.API.RatingOrchestrator/Services/MessageProcessor.cs",
+        "Rival.Rating.API.RatingOrchestrator/Services/ServiceBusPublisher.cs",
+        "Rival.Rating.API.RatingOrchestrator/appsettings.json"
+      ]
+    },
+    "carrier_connector": {
+      "repo": "Rival.Rating.API.CarrierConnector",
+      "type": "worker",
+      "keyFiles": [
+        "Rival.Rating.API.CarrierConnector/Program.cs",
+        "Rival.Rating.API.CarrierConnector/BackgroundServices/CarrierRatingConsumerService.cs",
+        "Rival.Rating.API.CarrierConnector/Services/RatingService.cs",
+        "Rival.Rating.API.CarrierConnector/Services/PremiumCalculator.cs",
+        "Rival.Rating.API.CarrierConnector/appsettings.json"
+      ]
+    },
+    "schema_cache": {
+      "repo": "Rival.Quoting.API.SchemaCache",
+      "type": "api",
+      "keyFiles": [
+        "Rival.Quoting.API.SchemaCache/Program.cs",
+        "Rival.Quoting.API.SchemaCache/Controllers/SchemaController.cs",
+        "Rival.Quoting.API.SchemaCache/Services/SchemaService.cs",
+        "Rival.Quoting.API.SchemaCache/appsettings.json"
+      ]
+    },
+    "rpm_client": {
+      "repo": "Rival.Platform.Web",
+      "type": "webapp",
+      "keyFiles": [
+        "RPMClient/Program.cs",
+        "RPMClient/Pages/Quoting/Quote.razor.cs",
+        "RPMClient/Services/QuoteService.cs",
+        "RPMClient/appsettings.json"
+      ]
+    },
+    "bff": {
+      "repo": "Rival.Platform.BFF",
+      "type": "api",
+      "keyFiles": [
+        "Web.BFF/Program.cs",
+        "Web.BFF/Controllers/QuotesController.cs",
+        "Web.BFF/Services/QuoteService.cs",
+        "Web.BFF/appsettings.json",
+        "Web.BFF/appsettings.Development.json"
+      ]
+    }
+  },
+
+  "blastRadius": {
+    "quote_mgmt": {
+      "upstream": ["bff", "rpm_client"],
+      "downstream": ["orchestrator", "schema_cache"],
+      "data": ["cosmos_db"],
+      "infra": ["service_bus"],
+      "contracts": {
+        "publishes_to": "sbq-rating-requests-dev",
+        "consumes_from": "sbq-rating-responses-dev",
+        "exposes": "/api/v1/quotes/*",
+        "calls": ["schema_cache:/Schema/GetActiveSchema"]
+      }
+    },
+    "orchestrator": {
+      "upstream": ["quote_mgmt"],
+      "downstream": ["carrier_connector"],
+      "data": ["blob_storage"],
+      "infra": ["service_bus"],
+      "contracts": {
+        "consumes_from": "sbq-initial-rating-requests",
+        "publishes_to": "sbq-rating-jobs",
+        "also_consumes": "sbq-rating-responses"
+      }
+    },
+    "carrier_connector": {
+      "upstream": ["orchestrator"],
+      "downstream": ["aviva", "sgi", "peace_hills"],
+      "data": ["blob_storage"],
+      "infra": ["service_bus"],
+      "contracts": {
+        "consumes_from": "sbq-rating-jobs",
+        "publishes_to": "sbq-rating-responses"
+      }
+    },
+    "schema_cache": {
+      "upstream": ["quote_mgmt", "rpm_client"],
+      "downstream": [],
+      "data": ["cosmos_db"],
+      "infra": ["service_bus"],
+      "contracts": {
+        "exposes": "/Schema/GetActiveSchema, /Schema/GetBundle, /InternalSync/*",
+        "consumes_from": "sbq-schema-updates-dev"
+      }
+    },
+    "rpm_client": {
+      "upstream": [],
+      "downstream": ["bff"],
+      "data": [],
+      "infra": [],
+      "contracts": {
+        "calls": ["bff:/api/Quotes/*", "bff:/api/CentralSchema/*"]
+      }
+    },
+    "bff": {
+      "upstream": ["rpm_client"],
+      "downstream": ["quote_mgmt", "schema_cache"],
+      "data": [],
+      "infra": ["key_vault"],
+      "contracts": {
+        "exposes": "/api/Quotes/*, /api/CentralSchema/*",
+        "calls": ["quote_mgmt:/api/v1/quotes/*"],
+        "injects": "Ocp-Apim-Subscription-Key header"
+      }
+    }
+  }
+}
