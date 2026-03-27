@@ -1,0 +1,61 @@
+name: Refresh Architecture Data
+
+on:
+  schedule:
+    - cron: '0 11 * * 1-5'  # 7am ET (11 UTC) weekdays
+  workflow_dispatch:  # Manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Clone Rating Platform repos
+        env:
+          ADO_PAT: ${{ secrets.ADO_PAT }}
+        run: |
+          REPOS=(
+            "Rival.Platform.Web"
+            "Rival.Platform.BFF"
+            "Rival.Quoting.API.QuoteManagement"
+            "Rival.Rating.API.RatingOrchestrator"
+            "Rival.Rating.API.CarrierConnector"
+            "Rival.Rating.API.Manufacture"
+            "Rival.Quoting.API.SchemaCache"
+            "Rival.Platform.API.Configuration"
+          )
+          mkdir -p /tmp/repos
+          for repo in "${REPOS[@]}"; do
+            echo "Cloning $repo..."
+            git clone --depth 1 "https://:${ADO_PAT}@dev.azure.com/rivalitinc/Rival%20Insurance%20Technology/_git/${repo}" "/tmp/repos/${repo}" 2>/dev/null || echo "Failed to clone $repo"
+          done
+
+      - name: Run enrichment
+        env:
+          ADO_PAT: ${{ secrets.ADO_PAT }}
+          REPOS_ROOT: /tmp/repos
+        run: |
+          # Update enrich-data.js to use REPOS_ROOT env var
+          node enrich-data.js || echo "Enrichment completed with warnings"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.js
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-refresh: update enrichment data $(date +%Y-%m-%d)"
+            git push
+          fi

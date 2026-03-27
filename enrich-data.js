@@ -35,7 +35,7 @@ const PROJECT_ENCODED = encodeURIComponent(PROJECT);
 const AUTH_HEADER = 'Basic ' + Buffer.from(':' + PAT).toString('base64');
 const BASE_URL = `https://dev.azure.com/${ORG}/${PROJECT_ENCODED}`;
 
-const REPOS_ROOT = '/Users/tariqusama/Documents/azure_devops/knowledge/repos';
+const REPOS_ROOT = process.env.REPOS_ROOT || '/Users/tariqusama/Documents/azure_devops/knowledge/repos';
 const SCRIPT_DIR = path.dirname(path.resolve(__filename));
 const DATA_BASE_PATH = path.join(SCRIPT_DIR, 'data-base.js');
 const DATA_OUTPUT_PATH = path.join(SCRIPT_DIR, 'data.js');
