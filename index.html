@@ -31,6 +31,11 @@ function checkAuth() {
     sessionStorage.setItem('archex-auth', 'true');
     document.getElementById('auth-gate').style.display = 'none';
     document.getElementById('app').style.display = '';
+    // Redraw SVG connections + status after app becomes visible
+    setTimeout(function() {
+      if (typeof window._redrawConnections === 'function') window._redrawConnections();
+      if (typeof window._reapplyStatus === 'function') window._reapplyStatus();
+    }, 200);
   } else {
     document.getElementById('auth-error').style.display = 'block';
     document.getElementById('auth-password').value = '';
@@ -380,8 +385,7 @@ window.dismissOnboarding = function() {
   var banner = document.getElementById('onboarding-banner');
   if (banner) banner.style.display = 'none';
 };
-</script>
-<script>
+
 (function () {
   'use strict';
 
@@ -719,6 +723,7 @@ window.dismissOnboarding = function() {
   function drawConnections() {
     var svg     = document.getElementById('connections-svg');
     var wrapper = document.getElementById('canvas-wrapper');
+    window._redrawConnections = drawConnections; // expose for auth gate
     var wW      = wrapper.scrollWidth;
     var wH      = wrapper.scrollHeight;
 
@@ -1322,6 +1327,7 @@ window.dismissOnboarding = function() {
   }
 
   /* -- Status View -------------------------------- */
+  window._reapplyStatus = function() { applyStatusView(true); };
   function applyStatusView(on) {
     document.querySelectorAll('.card').forEach(function (card) {
       var id = card.dataset.id;
