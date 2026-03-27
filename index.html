@@ -36,8 +36,9 @@ function checkAuth() {
     document.getElementById('auth-password').value = '';
   }
 }
-// Auto-unlock if already authenticated this session
-if (sessionStorage.getItem('archex-auth') === 'true') {
+// Auto-unlock if local file or already authenticated this session
+var isLocal = window.location.protocol === 'file:';
+if (isLocal || sessionStorage.getItem('archex-auth') === 'true') {
   document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('auth-gate').style.display = 'none';
     document.getElementById('app').style.display = '';
