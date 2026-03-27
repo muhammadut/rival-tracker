@@ -113,23 +113,23 @@
 <script src="insights-data.js"></script>
 <script src="data.js"></script>
 <script>
-/* ── GLOSSARY & Tooltip System ────────────────── */
+/* -- GLOSSARY & Tooltip System ------------------ */
 var GLOSSARY = {
-  'APIM': { title: 'API Management (APIM)', simple: 'A front gate for all API traffic. It checks who you are, limits how many requests you can make, and routes your request to the right service.', technical: 'Azure API Management gateway — handles auth, rate limiting, caching, and request routing.' },
+  'APIM': { title: 'API Management (APIM)', simple: 'A front gate for all API traffic. It checks who you are, limits how many requests you can make, and routes your request to the right service.', technical: 'Azure API Management gateway -- handles auth, rate limiting, caching, and request routing.' },
   'CDM': { title: 'Common Data Model (CDM)', simple: 'A universal format for insurance data. Instead of each carrier having its own format, CDM is the "one format to rule them all" that gets translated to carrier-specific formats later.', technical: 'Flat key-value dictionary with dot-separated paths like drivers[0].firstName. Carrier-agnostic data representation.' },
   'CSIO': { title: 'CSIO (Canadian Standards for Insurance Objects)', simple: 'The industry-standard XML format that Canadian insurance companies use to exchange data. Think of it as the "language" all carriers speak.', technical: 'XML schema standard maintained by the Centre for Study of Insurance Operations. Current versions: 1.48, 1.49.' },
-  'Service Bus': { title: 'Azure Service Bus', simple: 'A message queue — like a to-do list for the system. One service drops a message, another picks it up when ready. This means services don\'t need to be online at the same time.', technical: 'Managed enterprise message broker with queues and publish-subscribe topics. Provides reliable async messaging between decoupled services.' },
+  'Service Bus': { title: 'Azure Service Bus', simple: 'A message queue -- like a to-do list for the system. One service drops a message, another picks it up when ready. This means services don\'t need to be online at the same time.', technical: 'Managed enterprise message broker with queues and publish-subscribe topics. Provides reliable async messaging between decoupled services.' },
   'MongoDB': { title: 'MongoDB', simple: 'A database that stores data as flexible documents (like JSON files) rather than rigid tables. Good for data whose shape changes frequently, like insurance quotes with varying fields per carrier.', technical: 'NoSQL document database. Used here via CosmosDB with MongoDB API compatibility.' },
   'Blazor': { title: 'Blazor Server', simple: 'A way to build web apps using C# instead of JavaScript. The page renders on the server and sends updates to the browser in real-time via WebSocket. The brokers\' quoting UI is built with this.', technical: 'Server-side Blazor with SignalR WebSocket transport. All UI logic runs on the server; DOM diffs are sent to the browser.' },
-  'BFF': { title: 'Backend For Frontend', simple: 'A thin API layer that sits between the web app and all backend services. Its job: add security headers, route requests, and keep API keys out of the browser. It has zero business logic.', technical: 'API gateway pattern — proxies requests from the Blazor frontend to downstream microservices, injecting APIM subscription keys from Key Vault.' },
+  'BFF': { title: 'Backend For Frontend', simple: 'A thin API layer that sits between the web app and all backend services. Its job: add security headers, route requests, and keep API keys out of the browser. It has zero business logic.', technical: 'API gateway pattern -- proxies requests from the Blazor frontend to downstream microservices, injecting APIM subscription keys from Key Vault.' },
   'OAuth2': { title: 'OAuth2', simple: 'A secure way for one service to prove its identity to another without sharing passwords. The service gets a temporary token that says "I\'m allowed to do this."', technical: 'Authorization framework using bearer tokens. Used here for carrier API authentication (Aviva, SGI, Peace Hills).' },
   'Key Vault': { title: 'Azure Key Vault', simple: 'A secure vault in the cloud where sensitive information (API keys, passwords, certificates) is stored. Services retrieve secrets at runtime instead of hardcoding them.', technical: 'Managed HSM-backed secrets store. RBAC-controlled access. Used here for APIM subscription keys and DB credentials.' },
   'Docker': { title: 'Docker Container', simple: 'A way to package an application with everything it needs to run (code, runtime, libraries) into a single portable unit. You can run it anywhere that supports Docker.', technical: 'OCI container image built via multi-stage Dockerfile. Deployed to Azure Container Apps.' },
   'Container App': { title: 'Azure Container App', simple: 'The place where the packaged application actually runs in Azure\'s cloud. It handles scaling (more copies when busy, fewer when quiet) and keeps the app running 24/7.', technical: 'Serverless container hosting on Azure. Supports auto-scaling based on HTTP traffic or queue depth. Runs in a Container App Environment with VNet integration.' },
-  'Orchestrator': { title: 'Rating Orchestrator', simple: 'A background worker that takes a single rating request and splits it into separate jobs — one per carrier. If you\'re quoting 3 carriers, it creates 3 independent jobs. Think of it as a dispatcher.', technical: '.NET Worker Service consuming from Service Bus ingress queue, fanning out to per-carrier work queue.' },
+  'Orchestrator': { title: 'Rating Orchestrator', simple: 'A background worker that takes a single rating request and splits it into separate jobs -- one per carrier. If you\'re quoting 3 carriers, it creates 3 independent jobs. Think of it as a dispatcher.', technical: '.NET Worker Service consuming from Service Bus ingress queue, fanning out to per-carrier work queue.' },
   'Fan-out': { title: 'Fan-out Pattern', simple: 'Taking one input and splitting it into many parallel outputs. One quote request targeting 3 carriers becomes 3 separate carrier rating jobs that can be processed simultaneously.', technical: 'Message-level parallelism pattern. The orchestrator publishes N messages to the work queue for N carrier targets.' },
-  'Dead-letter': { title: 'Dead-letter Queue', simple: 'A special queue where messages that can\'t be processed go to "die" instead of being retried forever. Like a hospital for broken messages — someone can inspect them later.', technical: 'Service Bus DLQ. Messages are moved here after max delivery attempts or explicit dead-lettering due to malformed content.' },
-  'Polly': { title: 'Polly Resilience', simple: 'A library that automatically retries failed operations. If a network call fails, Polly waits a bit and tries again — with increasing wait times between retries.', technical: '.NET resilience and transient-fault-handling library. Supports retry, circuit breaker, timeout, and bulkhead policies.' },
+  'Dead-letter': { title: 'Dead-letter Queue', simple: 'A special queue where messages that can\'t be processed go to "die" instead of being retried forever. Like a hospital for broken messages -- someone can inspect them later.', technical: 'Service Bus DLQ. Messages are moved here after max delivery attempts or explicit dead-lettering due to malformed content.' },
+  'Polly': { title: 'Polly Resilience', simple: 'A library that automatically retries failed operations. If a network call fails, Polly waits a bit and tries again -- with increasing wait times between retries.', technical: '.NET resilience and transient-fault-handling library. Supports retry, circuit breaker, timeout, and bulkhead policies.' },
   'Bundle': { title: 'Schema Bundle', simple: 'A complete configuration package for a specific carrier+product combination. It defines what form fields to show, what validation rules to apply, and what format to use. Like a recipe card for quoting.', technical: 'JSON document containing manifest, schemaFields, formConfig, rulesEngine, i18n, and codeLists. Identified by bundle ID pattern: {carrier}.{product}.{intent}.{standard}@{version}.' }
 };
 
@@ -153,7 +153,7 @@ var GLOSSARY = {
   });
 })();
 
-/* ── Narrative Formatting & Term Highlighting ── */
+/* -- Narrative Formatting & Term Highlighting -- */
 function highlightTerms(text) {
   var terms = Object.keys(GLOSSARY).sort(function(a,b) { return b.length - a.length; });
   terms.forEach(function(term) {
@@ -177,7 +177,7 @@ function formatNarrative(narrative, nodeId) {
   return html;
 }
 
-/* ── Mini Architecture Diagrams ────────────── */
+/* -- Mini Architecture Diagrams -------------- */
 function renderMiniDiagram(nodeId) {
   var diagrams = {
     'quote_mgmt': {
@@ -314,7 +314,7 @@ function renderMiniDiagram(nodeId) {
   return '<div class="fv-section"><div class="fv-section-title">Component Diagram</div>' + svg + '</div>';
 }
 
-/* ── Expandable Insight Helpers ────────────── */
+/* -- Expandable Insight Helpers -------------- */
 function toggleInsightDetail(el) {
   var detail = el.querySelector('.fv-insight-detail');
   var toggle = el.querySelector('.fv-insight-toggle');
@@ -333,18 +333,19 @@ function copyTicket(btn) {
     });
   }
 }
-</script>
-<script>
-function dismissOnboarding() {
+
+/* -- Onboarding dismiss (global) -- */
+window.dismissOnboarding = function() {
   localStorage.setItem('archex-onboarded', '1');
   var banner = document.getElementById('onboarding-banner');
   if (banner) banner.style.display = 'none';
-}
-
+};
+</script>
+<script>
 (function () {
   'use strict';
 
-  /* ── Error boundary: check ARCH_DATA exists ──── */
+  /* -- Error boundary: check ARCH_DATA exists ---- */
   if (!window.ARCH_DATA || !window.ARCH_DATA.nodes) {
     document.getElementById('app').innerHTML =
       '<div style="padding:60px 40px;text-align:center;color:#e6edf3;font-family:sans-serif">' +
@@ -358,7 +359,7 @@ function dismissOnboarding() {
 
   var D = window.ARCH_DATA;
 
-  /* ── Helpers ──────────────────────────────────── */
+  /* -- Helpers ------------------------------------ */
   function nodeById(id) {
     return D.nodes.find(function (n) { return n.data.id === id; });
   }
@@ -386,6 +387,20 @@ function dismissOnboarding() {
     security: 'Secret Store', analytics: 'Analytics', group: 'Service Group', external_api: 'External API'
   };
 
+  var TYPE_TAXONOMY = {
+    'webapp': { label: 'Web App', color: '#4f8fff', icon: '\u25C8' },
+    'api': { label: 'API', color: '#3fb950', icon: '\u2B21' },
+    'worker': { label: 'Worker', color: '#8bc34a', icon: '\u27F2' },
+    'gateway': { label: 'Gateway', color: '#e91e63', icon: '\u25C7' },
+    'queue': { label: 'Message Queue', color: '#ffd600', icon: '\u224B' },
+    'database': { label: 'Database', color: '#a371f7', icon: '\u229E' },
+    'storage': { label: 'Storage', color: '#ff9800', icon: '\u25A4' },
+    'security': { label: 'Security', color: '#f85149', icon: '\u2298' },
+    'analytics': { label: 'Analytics', color: '#00bcd4', icon: '\u25C9' },
+    'carrier': { label: 'Carrier', color: '#795548', icon: '\u2295' },
+    'external_api': { label: 'External', color: '#607d8b', icon: '\u2297' }
+  };
+
   /* Pipeline order (before the fork) */
   var PIPELINE_IDS = ['rpm_client', 'bff', 'quote_mgmt', 'service_bus', 'orchestrator'];
   var CARRIER_IDS  = ['aviva', 'sgi', 'peace_hills'];
@@ -404,23 +419,32 @@ function dismissOnboarding() {
   var SUPPORTING_RIGHT = ['blob_storage', 'platform_config', 'apim', 'data_estate'];
 
   var SUPPORTING_CONNECTIONS = [
-    { from: 'quote_mgmt',        to: 'schema_cache',    label: 'Schema bundles' },
-    { from: 'quote_mgmt',        to: 'cosmos_db',       label: 'Quote records' },
-    { from: 'schema_cache',      to: 'cosmos_db',       label: 'Schema store' },
-    { from: 'schema_cache',      to: 'azure_sql',       label: 'Rating rules' },
-    { from: 'orchestrator',      to: 'blob_storage',    label: 'Archive' },
-    { from: 'carrier_connector', to: 'blob_storage',    label: 'XML archive' },
-    { from: 'blob_storage',      to: 'data_estate',     label: 'Analytics' },
-    { from: 'bff',               to: 'platform_config', label: 'Config' },
-    { from: 'bff',               to: 'apim',            label: 'APIM key' },
-    { from: 'orchestrator',      to: 'manufacture',     label: 'Manual rating' }
+    { from: 'quote_mgmt',        to: 'schema_cache',    label: 'Schema bundles',  connType: 'schema' },
+    { from: 'quote_mgmt',        to: 'cosmos_db',       label: 'Quote records',   connType: 'database' },
+    { from: 'schema_cache',      to: 'cosmos_db',       label: 'Schema store',    connType: 'database' },
+    { from: 'schema_cache',      to: 'azure_sql',       label: 'Rating rules',    connType: 'database' },
+    { from: 'orchestrator',      to: 'blob_storage',    label: 'Archive',         connType: 'storage' },
+    { from: 'orchestrator',      to: 'key_vault',       label: 'Blob auth',       connType: 'security' },
+    { from: 'carrier_connector', to: 'blob_storage',    label: 'XML archive',     connType: 'storage' },
+    { from: 'blob_storage',      to: 'data_estate',     label: 'Analytics',       connType: 'storage' },
+    { from: 'bff',               to: 'platform_config', label: 'Config',          connType: 'schema' },
+    { from: 'bff',               to: 'apim',            label: 'APIM key',        connType: 'security' },
+    { from: 'orchestrator',      to: 'manufacture',     label: 'Manual rating',   connType: 'schema' }
   ];
+
+  /* Connection type color map */
+  var CONN_TYPE_COLORS = {
+    database: '#a371f7',
+    storage:  '#ff9800',
+    security: '#f85149',
+    schema:   '#4f8fff'
+  };
 
   /* State */
   var activeCard = null;
   var flowState  = { playing: false, flow: null, stepIdx: -1, timer: null };
 
-  /* ── Card creation ────────────────────────────── */
+  /* -- Card creation ------------------------------ */
   function createCard(id, isSupporting) {
     var node = nodeById(id);
     if (!node) return null;
@@ -429,7 +453,7 @@ function dismissOnboarding() {
     var st   = statusFor(id);
 
     var el = document.createElement('div');
-    el.className = 'card' + (isSupporting ? ' supporting' : '');
+    el.className = 'card' + (isSupporting ? ' supporting supporting-card' : '');
     el.dataset.id = id;
     el.setAttribute('tabindex', '0');
     el.setAttribute('role', 'button');
@@ -460,11 +484,21 @@ function dismissOnboarding() {
       }
     }
 
+    var typeTax = TYPE_TAXONOMY[iconClass];
+    var typeBadgeHtml = '';
+    if (typeTax) {
+      typeBadgeHtml = '<div class="card-type-badge" style="color: ' + typeTax.color + '">' +
+        '<span class="type-icon">' + typeTax.icon + '</span>' +
+        '<span class="type-label">' + typeTax.label + '</span>' +
+        '</div>';
+    }
+
     el.innerHTML =
       '<div class="blocker-icon" title="Has blockers">\u26A0</div>' +
       busBadge +
       '<div class="card-icon ' + esc(iconClass) + '">' + icon + '</div>' +
       '<div class="card-title">' + esc(nd.label) + '</div>' +
+      typeBadgeHtml +
       '<div class="card-subtitle">' + esc(subtitle) + '</div>' +
       (owner ? '<div class="card-owner"><span class="card-owner-dot" style="background:' + ownerDotColor + '"></span>' + esc(owner) + '</div>' : '');
 
@@ -489,7 +523,7 @@ function dismissOnboarding() {
     return arrow;
   }
 
-  /* ── Render Pipeline (Vertical) ─────────────── */
+  /* -- Render Pipeline (Vertical) --------------- */
   function renderPipeline() {
     var container = document.getElementById('pipeline');
     container.innerHTML = '';
@@ -597,7 +631,7 @@ function dismissOnboarding() {
     container.appendChild(end);
   }
 
-  /* ── Render Supporting Services (sides) ─────── */
+  /* -- Render Supporting Services (sides) ------- */
   function renderSupporting() {
     var leftContainer = document.getElementById('supporting-left');
     var rightContainer = document.getElementById('supporting-right');
@@ -615,7 +649,7 @@ function dismissOnboarding() {
     });
   }
 
-  /* ── Connection Health Check ────────────────── */
+  /* -- Connection Health Check ------------------ */
   function getConnectionHealth(sourceId, targetId) {
     var insights = window.INSIGHTS_DATA;
     if (!insights) return 'healthy';
@@ -641,7 +675,7 @@ function dismissOnboarding() {
     return 'healthy';
   }
 
-  /* ── Draw SVG Connections ─────────────────────── */
+  /* -- Draw SVG Connections ----------------------- */
   function drawConnections() {
     var svg     = document.getElementById('connections-svg');
     var wrapper = document.getElementById('canvas-wrapper');
@@ -670,7 +704,10 @@ function dismissOnboarding() {
 
     var wrapperRect = wrapper.getBoundingClientRect();
 
-    SUPPORTING_CONNECTIONS.forEach(function (conn) {
+    /* Animated dot durations - stagger so they don't sync */
+    var dotDurations = [4, 4.7, 5.3, 5.9, 4.4, 6.1, 5, 4.8, 5.5, 6.3, 5.7];
+
+    SUPPORTING_CONNECTIONS.forEach(function (conn, connIdx) {
       var fromEl = wrapper.querySelector('.card[data-id="' + conn.from + '"]');
       var toEl   = wrapper.querySelector('.card[data-id="' + conn.to + '"]');
       if (!fromEl || !toEl) return;
@@ -705,7 +742,12 @@ function dismissOnboarding() {
       var health = getConnectionHealth(conn.from, conn.to);
       var isBroken = health === 'broken';
 
+      /* Determine color from connection type */
+      var connTypeColor = CONN_TYPE_COLORS[conn.connType] || '#8b949e';
+
+      var pathId = 'conn-path-' + conn.from + '-' + conn.to;
       var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('id', pathId);
       path.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' C ' + midX + ' ' + y1 + ', ' + midX + ' ' + y2 + ', ' + x2 + ' ' + y2);
       path.setAttribute('fill', 'none');
       path.setAttribute('stroke', isBroken ? '#f85149' : '#30363d');
@@ -715,20 +757,39 @@ function dismissOnboarding() {
       path.dataset.from = conn.from;
       path.dataset.to   = conn.to;
       path.dataset.health = health;
+      path.dataset.connType = conn.connType || '';
       svg.appendChild(path);
 
-      /* Label */
+      /* Label - colored by connection type */
       var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       var labelX = midX;
       var labelY = (y1 + y2) / 2 - 6;
       text.setAttribute('x', labelX);
       text.setAttribute('y', labelY);
-      text.setAttribute('fill', isBroken ? '#f85149' : '#8b949e');
+      text.setAttribute('fill', isBroken ? '#f85149' : connTypeColor);
       text.setAttribute('font-size', '10');
       text.setAttribute('text-anchor', 'middle');
       text.setAttribute('font-family', "'SF Mono',SFMono-Regular,Consolas,monospace");
       text.textContent = conn.label;
       svg.appendChild(text);
+
+      /* Animated dot following the path (visible in Architecture view only) */
+      var dotColor = isBroken ? '#f85149' : connTypeColor;
+      var dotDur = dotDurations[connIdx % dotDurations.length];
+      var dotCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      dotCircle.setAttribute('r', '2.5');
+      dotCircle.setAttribute('fill', dotColor);
+      dotCircle.setAttribute('opacity', '0.6');
+      dotCircle.setAttribute('class', 'flow-animated-dot');
+      var animMotion = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
+      animMotion.setAttribute('dur', dotDur + 's');
+      animMotion.setAttribute('repeatCount', 'indefinite');
+      var mpath = document.createElementNS('http://www.w3.org/2000/svg', 'mpath');
+      mpath.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#' + pathId);
+      mpath.setAttribute('href', '#' + pathId);
+      animMotion.appendChild(mpath);
+      dotCircle.appendChild(animMotion);
+      svg.appendChild(dotCircle);
 
       /* Warning icon for broken connections */
       if (isBroken) {
@@ -810,7 +871,7 @@ function dismissOnboarding() {
     });
   }
 
-  /* ── Plain-English Explanations ──────────────── */
+  /* -- Plain-English Explanations ---------------- */
   var WHAT_THIS_DOES = {
     rpm_client: "This is the web application that insurance brokers use. They fill out forms with customer details, select which insurance companies to get quotes from, and submit. Built with Microsoft's Blazor framework - think of it as the 'front desk' of the system.",
     bff: "The Backend-for-Frontend sits between the web app and all backend services. Every API call from the browser goes through here first. It handles authentication, routes requests to the right service, and adds security headers. Think of it as a 'receptionist' that checks your ID before letting you through.",
@@ -824,7 +885,7 @@ function dismissOnboarding() {
     apim: "Azure API Management would be the front gate for all external API traffic - handling authentication, rate limiting, and routing. It's a critical piece that is NOT YET PROVISIONED in the infrastructure."
   };
 
-  /* ── Enrichment Data Helpers ───────────────────── */
+  /* -- Enrichment Data Helpers --------------------- */
   function getEnrichment(id) {
     if (window.ARCH_DATA && window.ARCH_DATA.enrichment && window.ARCH_DATA.enrichment.services) {
       return window.ARCH_DATA.enrichment.services[id] || null;
@@ -871,7 +932,7 @@ function dismissOnboarding() {
     return 'Active';
   }
 
-  /* ── Build Overview Tab ────────────────────────── */
+  /* -- Build Overview Tab -------------------------- */
   function buildOverviewTab(id, nd, meta, st) {
     var html = '';
 
@@ -938,7 +999,7 @@ function dismissOnboarding() {
     return html;
   }
 
-  /* ── Build Activity Tab ────────────────────────── */
+  /* -- Build Activity Tab -------------------------- */
   function buildActivityTab(id) {
     var enrichment = getEnrichment(id);
     if (!enrichment) {
@@ -1030,7 +1091,7 @@ function dismissOnboarding() {
     return html;
   }
 
-  /* ── Build Architecture Tab ────────────────────── */
+  /* -- Build Architecture Tab ---------------------- */
   function buildArchitectureTab(id, nd, meta, st) {
     var html = '';
 
@@ -1117,7 +1178,7 @@ function dismissOnboarding() {
     return html;
   }
 
-  /* ── Show Detail Panel ────────────────────────── */
+  /* -- Show Detail Panel -------------------------- */
   function showDetail(id) {
     var node = nodeById(id);
     if (!node) return;
@@ -1201,7 +1262,7 @@ function dismissOnboarding() {
     });
   }
 
-  /* ── Status Helpers ───────────────────────────── */
+  /* -- Status Helpers ----------------------------- */
   function getStatusClass(st) {
     if (!st) return 'gray';
     if (st.code === 'functional' && st.deployed)  return 'green';
@@ -1220,7 +1281,7 @@ function dismissOnboarding() {
     return st.code;
   }
 
-  /* ── Status View ──────────────────────────────── */
+  /* -- Status View -------------------------------- */
   function applyStatusView(on) {
     document.querySelectorAll('.card').forEach(function (card) {
       var id = card.dataset.id;
@@ -1258,7 +1319,7 @@ function dismissOnboarding() {
     }
   }
 
-  /* ── Data Flow Animation ──────────────────────── */
+  /* -- Data Flow Animation ------------------------ */
   function initFlowControls() {
     var select = document.getElementById('flow-select');
     select.innerHTML = '';
@@ -1394,12 +1455,24 @@ function dismissOnboarding() {
     /* Animate glow dot */
     animateGlowDot(step.source, step.target);
 
-    /* Dim non-participating cards */
+    /* Determine which supporting services to dimly highlight */
+    var supportIds = [];
+    if (step.source === 'quote_mgmt' && step.target === 'service_bus') {
+      supportIds = ['cosmos_db']; /* Quote Management saves to MongoDB first */
+    }
+    if (step.source === 'orchestrator' || step.target === 'carrier_connector') {
+      supportIds.push('blob_storage'); /* Orchestrator archives the request */
+    }
+
+    /* Dim non-participating cards, dimly highlight supporting */
     document.querySelectorAll('.card').forEach(function (c) {
-      if (c.dataset.id !== step.source && c.dataset.id !== step.target) {
-        c.style.opacity = '0.3';
-      } else {
+      if (c.dataset.id === step.source || c.dataset.id === step.target) {
         c.style.opacity = '1';
+      } else if (supportIds.indexOf(c.dataset.id) >= 0) {
+        c.style.opacity = '0.6';
+        c.classList.add('wt-support-glow');
+      } else {
+        c.style.opacity = '0.3';
       }
     });
     document.querySelectorAll('.carrier-mini').forEach(function (c) {
@@ -1407,18 +1480,44 @@ function dismissOnboarding() {
         c.style.opacity = '0.3';
       } else {
         c.style.opacity = '1';
+      }
+    });
+
+    /* Highlight supporting SVG paths dimly */
+    if (step.source === 'quote_mgmt' && step.target === 'service_bus') {
+      highlightSupportingPathDim('quote_mgmt', 'cosmos_db');
+    }
+    if (step.source === 'orchestrator' || step.target === 'carrier_connector') {
+      highlightSupportingPathDim('orchestrator', 'blob_storage');
+    }
+  }
+
+  function highlightSupportingPathDim(fromId, toId) {
+    var connType = '';
+    SUPPORTING_CONNECTIONS.forEach(function (conn) {
+      if (conn.from === fromId && conn.to === toId) connType = conn.connType || '';
+    });
+    var pathColor = CONN_TYPE_COLORS[connType] || '#4f8fff';
+
+    document.querySelectorAll('#connections-svg path').forEach(function (p) {
+      if ((p.dataset.from === fromId && p.dataset.to === toId) ||
+          (p.dataset.to === fromId && p.dataset.from === toId)) {
+        p.setAttribute('stroke', pathColor);
+        p.setAttribute('stroke-width', '1.5');
+        p.setAttribute('stroke-dasharray', 'none');
+        p.setAttribute('opacity', '0.5');
       }
     });
   }
 
   function clearFlowHighlights() {
     document.querySelectorAll('.card').forEach(function (c) {
-      c.classList.remove('flow-glow');
+      c.classList.remove('flow-glow', 'wt-support-glow');
       c.style.opacity = '';
     });
     document.querySelectorAll('.carrier-mini').forEach(function (c) {
       c.style.opacity = '';
-      c.classList.remove('flow-glow');
+      c.classList.remove('flow-glow', 'wt-support-glow');
     });
     document.querySelectorAll('.arrow-segment').forEach(function (a) {
       a.classList.remove('highlighted');
@@ -1429,6 +1528,7 @@ function dismissOnboarding() {
       p.setAttribute('stroke-width', isBroken ? '2' : '1.5');
       p.setAttribute('stroke-dasharray', isBroken ? '6 4' : '4 3');
       p.setAttribute('marker-end', isBroken ? 'url(#arr-broken)' : 'url(#arr)');
+      p.removeAttribute('opacity');
     });
     var dot = document.getElementById('glow-dot');
     dot.classList.remove('visible');
@@ -1467,13 +1567,21 @@ function dismissOnboarding() {
     });
   }
 
-  /* ── View Switching ───────────────────────────── */
+  /* -- View Switching ----------------------------- */
   function switchView(view) {
     document.querySelectorAll('.tab').forEach(function (t) {
       t.classList.toggle('active', t.dataset.view === view);
     });
     applyStatusView(view === 'status');
     showFlowView(view === 'dataflow');
+
+    /* Toggle animated flow dots - only in Architecture view */
+    var wrapper = document.getElementById('canvas-wrapper');
+    if (view === 'architecture') {
+      wrapper.classList.add('show-flow-dots');
+    } else {
+      wrapper.classList.remove('show-flow-dots');
+    }
 
     /* MVP dashboard toggle */
     var mainEl = document.querySelector('main');
@@ -1488,9 +1596,9 @@ function dismissOnboarding() {
     }
   }
 
-  /* ═══════════════════════════════════════════════
-     ── QUOTE FLOW WALKTHROUGH ──
-     ═══════════════════════════════════════════════ */
+  /* ===============================================
+     -- QUOTE FLOW WALKTHROUGH --
+     =============================================== */
 
   var WT_STEPS = [
     {
@@ -1512,7 +1620,18 @@ function dismissOnboarding() {
       title: 'Quote Management',
       text: 'A quote record is created in MongoDB. The request is packaged as a JSON DTO and published to the Service Bus.',
       format: 'JSON DTO',
-      next: 'Azure Service Bus'
+      next: 'Schema Cache'
+    },
+    {
+      id: 'schema_cache',
+      title: 'Schema Cache (Supporting)',
+      text: 'Quote Management checks Schema Cache to resolve carrier bundles - determining which carriers support this product and what configuration to use.',
+      format: 'HTTP GET /Schema/GetActiveSchema?carrierId=aviva&productCode=PersAuto',
+      next: 'Azure Service Bus',
+      isSupporting: true,
+      supportFrom: 'quote_mgmt',
+      supportTo: 'schema_cache',
+      highlightIds: ['quote_mgmt', 'schema_cache']
     },
     {
       id: 'service_bus',
@@ -1526,30 +1645,52 @@ function dismissOnboarding() {
       title: 'Rating Orchestrator',
       text: 'The orchestrator picks up the message, saves a copy to blob storage, then fans out individual carrier requests.',
       format: 'JSON DTO',
-      next: 'Rating Path Fork'
+      next: 'Key Vault'
+    },
+    {
+      id: 'key_vault',
+      title: 'Key Vault (Supporting)',
+      text: 'Orchestrator retrieves secrets from Key Vault for blob storage authentication before archiving the request payload.',
+      format: 'Azure Key Vault SDK - GetSecretAsync',
+      next: 'Rating Path Fork',
+      isSupporting: true,
+      supportFrom: 'orchestrator',
+      supportTo: 'key_vault',
+      highlightIds: ['orchestrator', 'key_vault']
     },
     {
       id: 'carrier_connector',
       title: 'Direct Rating (Carrier Connector)',
       text: 'For carriers like Aviva, SGI, Peace Hills - the request is translated to CSIO XML and sent directly to the carrier\'s API.',
       format: 'CSIO XML',
-      next: 'Insurance Carriers',
+      next: 'Blob Storage (audit)',
       isForkLeft: true
     },
     {
-      id: 'manufacture',
-      title: 'Manufactured Rating',
-      text: 'For in-house rated products - rating rules from the database are applied to calculate premiums directly. NOT YET BUILT - zero application code exists.',
-      format: 'N/A',
-      next: null,
-      isForkRight: true
+      id: 'blob_storage',
+      title: 'Blob Storage (Supporting)',
+      text: 'Carrier Connector stores the CSIO XML request and response in Blob Storage for audit trail and troubleshooting.',
+      format: 'Azure Blob Storage - XML files',
+      next: 'Insurance Carriers',
+      isSupporting: true,
+      supportFrom: 'carrier_connector',
+      supportTo: 'blob_storage',
+      highlightIds: ['carrier_connector', 'blob_storage']
     },
     {
       id: 'carriers_group',
       title: 'Insurance Carriers',
       text: 'The carrier processes the CSIO XML and returns a rating response. Each carrier (Aviva, SGI, Peace Hills) has its own adapter and authentication method.',
       format: 'Rating Response XML',
-      next: 'Response flows back'
+      next: 'Manufactured Rating'
+    },
+    {
+      id: 'manufacture',
+      title: 'Manufactured Rating',
+      text: 'For in-house rated products - rating rules from the database are applied to calculate premiums directly. NOT YET BUILT - zero application code exists.',
+      format: 'N/A',
+      next: 'Response flows back',
+      isForkRight: true
     },
     {
       id: 'response_flow',
@@ -1624,15 +1765,42 @@ function dismissOnboarding() {
 
   function clearWtHighlights() {
     document.querySelectorAll('.card').forEach(function (c) {
-      c.classList.remove('flow-glow');
+      c.classList.remove('flow-glow', 'wt-support-glow');
       c.style.opacity = '';
     });
     document.querySelectorAll('.carrier-mini').forEach(function (c) {
       c.style.opacity = '';
-      c.classList.remove('flow-glow');
+      c.classList.remove('flow-glow', 'wt-support-glow');
+    });
+    /* Reset any highlighted SVG paths */
+    document.querySelectorAll('#connections-svg path').forEach(function (p) {
+      var isBroken = p.dataset.health === 'broken';
+      p.setAttribute('stroke', isBroken ? '#f85149' : '#30363d');
+      p.setAttribute('stroke-width', isBroken ? '2' : '1.5');
+      p.setAttribute('stroke-dasharray', isBroken ? '6 4' : '4 3');
+      p.setAttribute('marker-end', isBroken ? 'url(#arr-broken)' : 'url(#arr)');
     });
     var dot = document.getElementById('glow-dot');
     dot.classList.remove('visible');
+  }
+
+  function highlightSupportingPath(fromId, toId) {
+    /* Highlight the SVG path between fromId and toId */
+    var connType = '';
+    SUPPORTING_CONNECTIONS.forEach(function (conn) {
+      if (conn.from === fromId && conn.to === toId) connType = conn.connType || '';
+    });
+    var pathColor = CONN_TYPE_COLORS[connType] || '#4f8fff';
+
+    document.querySelectorAll('#connections-svg path').forEach(function (p) {
+      if ((p.dataset.from === fromId && p.dataset.to === toId) ||
+          (p.dataset.to === fromId && p.dataset.from === toId)) {
+        p.setAttribute('stroke', pathColor);
+        p.setAttribute('stroke-width', '2.5');
+        p.setAttribute('stroke-dasharray', 'none');
+        p.setAttribute('marker-end', 'url(#arr-hl)');
+      }
+    });
   }
 
   function showWtStep(idx) {
@@ -1658,7 +1826,7 @@ function dismissOnboarding() {
         var el = document.querySelector('.card[data-id="' + hid + '"]');
         if (el) {
           el.style.opacity = '1';
-          el.classList.add('flow-glow');
+          el.classList.add(step.isSupporting ? 'wt-support-glow' : 'flow-glow');
           targetEls.push(el);
         }
       });
@@ -1681,9 +1849,14 @@ function dismissOnboarding() {
       var el = document.querySelector('.card[data-id="' + step.id + '"]');
       if (el) {
         el.style.opacity = '1';
-        el.classList.add('flow-glow');
+        el.classList.add(step.isSupporting ? 'wt-support-glow' : 'flow-glow');
         targetEls.push(el);
       }
+    }
+
+    /* For supporting steps, highlight the SVG path connecting the two services */
+    if (step.isSupporting && step.supportFrom && step.supportTo) {
+      highlightSupportingPath(step.supportFrom, step.supportTo);
     }
 
     /* Animate traveling dot to target */
@@ -1806,9 +1979,10 @@ function dismissOnboarding() {
       '<div class="wt-check">\u2705</div>' +
       '<h2>End-to-end quote flow complete</h2>' +
       '<div class="wt-summary-stats">' +
-        '<div class="wt-summary-stat"><span class="stat-icon">\u2699\uFE0F</span> Total components: 7 services</div>' +
+        '<div class="wt-summary-stat"><span class="stat-icon">\u2699\uFE0F</span> Total components: 7 pipeline services + 3 supporting services</div>' +
         '<div class="wt-summary-stat"><span class="stat-icon">\uD83D\uDCE6</span> Data formats: JSON DTO \u2192 CSIO XML \u2192 Rating Response</div>' +
         '<div class="wt-summary-stat"><span class="stat-icon">\uD83D\uDCE8</span> 3 Service Bus queues coordinate async processing</div>' +
+        '<div class="wt-summary-stat"><span class="stat-icon">\uD83D\uDD17</span> Supporting: Schema Cache, Key Vault, Blob Storage involved in flow</div>' +
         '<div class="wt-summary-stat critical"><span class="stat-icon">\u26A0\uFE0F</span> Critical gap: Manufactured Rating has zero code</div>' +
       '</div>' +
       '<div class="wt-summary-actions">' +
@@ -1829,9 +2003,9 @@ function dismissOnboarding() {
     }, 50);
   }
 
-  /* ═══════════════════════════════════════════════
-     ── MVP PROGRESS DASHBOARD ──
-     ═══════════════════════════════════════════════ */
+  /* ===============================================
+     -- MVP PROGRESS DASHBOARD --
+     =============================================== */
 
   function escHtml(str) {
     var d = document.createElement('div');
@@ -1847,7 +2021,74 @@ function dismissOnboarding() {
 
     var html = '';
 
-    /* ── Progress Header ── */
+    /* Step-to-service mapping for the pipeline diagram */
+    var stepServiceMap = {
+      'rpm_client': [9],
+      'bff': [1, 2, 3],
+      'quote_mgmt': [4, 5, 6],
+      'orchestrator': [7],
+      'carrier_connector': [8],
+      'schema_cache': [10]
+    };
+
+    /* Pipeline order (top to bottom) */
+    var pipelineOrder = [
+      { id: 'rpm_client', label: 'RPM Client' },
+      { id: 'bff', label: 'Web BFF' },
+      { id: 'quote_mgmt', label: 'Quote Management' },
+      { id: 'service_bus', label: 'Service Bus', isInfra: true },
+      { id: 'orchestrator', label: 'Rating Orchestrator' },
+      { id: 'carrier_connector', label: 'Carrier Connector' },
+      { id: 'schema_cache', label: 'Schema Cache' }
+    ];
+
+    /* "Why this matters" context for each step */
+    var whyItMatters = {
+      1: "Without a URL, the BFF silently drops every quote request. The broker clicks Submit and nothing happens -- no error, no feedback, just silence.",
+      2: "Under any concurrent load (two brokers submitting quotes at once), auth headers get corrupted mid-flight. One request steals another's credentials, causing random 401s that are nearly impossible to debug.",
+      3: "A single transient network blip between BFF and QuoteManagement kills the request permanently. With Polly enabled, it auto-retries and the broker never notices the hiccup.",
+      4: "QuoteManagement is shouting into an empty room. It sends messages to a Service Bus namespace that doesn't exist in your infrastructure. Zero messages reach the Orchestrator.",
+      5: "The app compiles fine but crashes at runtime the moment a broker submits a quote. The DI container can't find ServiceBusSettings, so RatingSubmissionService never gets created.",
+      6: "With only one appsettings.json, deploying to QA or prod means either manually editing the file each time or running with dev/mock settings in production.",
+      7: "This is your integration smoke test. If a message flows from QuoteManagement through the Orchestrator and fans out to carrier jobs, the backbone of your platform is working.",
+      8: "The health endpoint lies -- it always says 'Healthy' even when Service Bus is disconnected. Container Apps will keep routing traffic to a dead instance instead of restarting it.",
+      9: "Rating is async (returns 202 with a jobId), but the UI immediately fetches results. It's like checking your mailbox 1 second after sending a letter -- offers will always be empty.",
+      10: "Without schema bundles, RPM Client can't render quote forms for any carrier. The broker sees a blank page instead of fields for vehicle info, driver details, and coverage options."
+    };
+
+    /* Before/After examples for key steps */
+    var beforeAfter = {
+      1: {
+        before: '"QuoteManagementApiUrl": ""',
+        after: '"QuoteManagementApiUrl": "https://localhost:7124"'
+      },
+      2: {
+        before: 'client.DefaultRequestHeaders.Remove("Ocp-Apim...");\nclient.DefaultRequestHeaders.Add("Ocp-Apim...", key);',
+        after: 'var request = new HttpRequestMessage(method, url);\nrequest.Headers.Add("Ocp-Apim...", key);'
+      },
+      3: {
+        before: '// .AddResiliencePolicies()  <-- commented out',
+        after: '.AddResiliencePolicies()  // retry + circuit breaker active'
+      },
+      4: {
+        before: '"FullyQualifiedServiceBusNamespace": "sbns-rating-dev-001..."\n"RequestQueueName": "sbq-rating-requests-dev"',
+        after: '"FullyQualifiedServiceBusNamespace": "sbns-ratingplatform-dev-001..."\n"RequestQueueName": "sbq-initial-rating-requests"'
+      },
+      5: {
+        before: '// ServiceBusSettings is never registered\nbuilder.Services.Configure<AzServiceBusOptions>(...);',
+        after: 'builder.Services.Configure<ServiceBusSettings>(\n  builder.Configuration.GetSection("ServiceBusSettings"));'
+      },
+      8: {
+        before: 'var isHealthy = true; // hardcoded!',
+        after: 'var isHealthy = processor.IsProcessing\n  && await storageClient.PingAsync();'
+      },
+      9: {
+        before: 'await RateQuoteAsync(quoteId);\nvar offers = await GetOffersAsync(quoteId); // always empty!',
+        after: 'var jobId = await RateQuoteAsync(quoteId);\nawait PollUntilRated(jobId, timeout: 60s);\nvar offers = await GetOffersAsync(quoteId);'
+      }
+    };
+
+    /* -- Progress Header -- */
     html += '<div class="mvp-progress-header">';
     html += '<div class="mvp-title">MVP Critical Path</div>';
     html += '<div class="mvp-subtitle">' + escHtml(AP.mvpGoal) + '</div>';
@@ -1855,7 +2096,65 @@ function dismissOnboarding() {
     html += '<div class="mvp-progress-label">0 of 10 steps addressed &middot; ' + escHtml(AP.systemMvpSummary.estimatedComplexity) + '</div>';
     html += '</div>';
 
-    /* ── Quick Wins ── */
+    /* -- Two-column diagram layout -- */
+    html += '<div class="mvp-diagram-layout">';
+
+    /* LEFT COLUMN: Mini pipeline diagram */
+    html += '<div class="mvp-diagram-left">';
+    html += '<h2 style="font-size:16px;font-weight:600;color:#e6edf3;margin-bottom:16px">Architecture Pipeline &amp; Steps</h2>';
+    html += '<div class="mvp-pipeline-mini">';
+
+    pipelineOrder.forEach(function(node, idx) {
+      var steps = stepServiceMap[node.id] || [];
+
+      html += '<div class="mvp-pipeline-node">';
+
+      /* The pipeline card */
+      var cardClass = 'mvp-pipeline-card';
+      if (node.isInfra) cardClass += ' mvp-pipeline-infra';
+      html += '<div class="' + cardClass + '">' + escHtml(node.label) + '</div>';
+
+      /* Step badges next to this node */
+      if (steps.length > 0) {
+        html += '<div class="mvp-step-badges">';
+        steps.forEach(function(stepNum) {
+          var step = AP.mvpCriticalPath[stepNum - 1];
+          if (!step) return;
+          var shortTitle = step.title.replace(/^Fix /, '').replace(/^Implement /, '').replace(/^Enable /, '').replace(/^Verify /, '').replace(/^Register /, '').replace(/^Create /, '').replace(/^Load /, '');
+          if (shortTitle.length > 28) shortTitle = shortTitle.substring(0, 26) + '...';
+          html += '<div class="mvp-step-badge ' + step.complexity + '" data-step="' + (stepNum - 1) + '" title="Step ' + stepNum + ': ' + escHtml(step.title) + '">';
+          html += '<span class="mvp-step-badge-num">' + stepNum + '</span>';
+          html += '<span class="mvp-step-badge-label">' + escHtml(shortTitle) + '</span>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      html += '</div>';
+
+      /* Arrow between nodes (not after last) */
+      if (idx < pipelineOrder.length - 1) {
+        html += '<div class="mvp-pipeline-arrow-wrap"><div class="mvp-pipeline-arrow"></div></div>';
+      }
+    });
+
+    html += '</div>'; /* .mvp-pipeline-mini */
+    html += '</div>'; /* .mvp-diagram-left */
+
+    /* RIGHT COLUMN: Step detail panel */
+    html += '<div class="mvp-diagram-right">';
+    html += '<div class="mvp-step-detail" id="mvp-step-detail">';
+    html += '<div class="mvp-step-detail-empty">';
+    html += '<div style="font-size:40px;margin-bottom:12px;opacity:0.3">&#8592;</div>';
+    html += '<div style="font-size:15px;font-weight:500;color:#8b949e">Click a step badge on the pipeline to see details</div>';
+    html += '<div style="font-size:13px;color:#484f58;margin-top:8px">Each badge shows a critical path step mapped to the service it affects</div>';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>'; /* .mvp-diagram-right */
+
+    html += '</div>'; /* .mvp-diagram-layout */
+
+    /* -- Quick Wins -- */
     html += '<div class="mvp-quick-wins">';
     html += '<div class="mvp-quick-wins-title">Quick Wins</div>';
     html += '<div style="font-size:12px;color:#8b949e;margin-bottom:12px">These can be done in under 15 minutes each</div>';
@@ -1864,44 +2163,7 @@ function dismissOnboarding() {
     });
     html += '</div>';
 
-    /* ── Critical Path Checklist ── */
-    html += '<h2 style="font-size:18px;font-weight:600;color:#e6edf3;margin-bottom:16px">Critical Path Steps</h2>';
-    AP.mvpCriticalPath.forEach(function(step) {
-      var complexityColor = step.complexity === 'small' ? '#3fb950' : step.complexity === 'medium' ? '#d29922' : '#f85149';
-      html += '<div class="mvp-step-card">';
-
-      /* Checkbox */
-      html += '<label style="cursor:pointer;flex-shrink:0;margin-top:6px">' +
-        '<input type="checkbox" style="width:18px;height:18px;accent-color:#3fb950;cursor:pointer">' +
-        '</label>';
-
-      /* Step number */
-      html += '<div class="mvp-step-number">' + step.order + '</div>';
-
-      /* Content */
-      html += '<div class="mvp-step-content">';
-      html += '<div class="mvp-step-title">' + escHtml(step.title) + '</div>';
-      html += '<div class="mvp-step-desc">' + escHtml(step.description) + '</div>';
-      html += '<div class="mvp-step-meta">';
-      html += '<span class="detail-tag" style="border:1px solid ' + complexityColor + ';color:' + complexityColor + '">' + step.complexity + '</span>';
-      html += '<span class="detail-tag">' + escHtml(step.owner) + '</span>';
-
-      /* Affected services as clickable badges */
-      (step.affectedServices || []).forEach(function(svc) {
-        html += '<span class="detail-tag mvp-svc-badge" data-svc="' + svc + '" style="cursor:pointer;border:1px solid #4f8fff;color:#4f8fff">' + svc.replace(/_/g, ' ') + '</span>';
-      });
-
-      html += '</div></div>';
-
-      /* Copy ticket button */
-      html += '<button class="mvp-copy-ticket" data-step="' + (step.order - 1) + '" title="Copy ticket text" style="flex-shrink:0;background:none;border:1px solid #30363d;border-radius:6px;color:#8b949e;padding:6px 10px;cursor:pointer;font-size:12px;white-space:nowrap;transition:all .2s">';
-      html += 'Copy Ticket';
-      html += '</button>';
-
-      html += '</div>';
-    });
-
-    /* ── Service Status Grid ── */
+    /* -- Service Status Grid -- */
     html += '<h2 style="font-size:18px;font-weight:600;color:#e6edf3;margin:24px 0 16px">Service Status</h2>';
     html += '<div class="mvp-service-grid">';
 
@@ -1952,6 +2214,123 @@ function dismissOnboarding() {
 
     el.innerHTML = html;
 
+    /* -- Bind step badge clicks -- */
+    el.querySelectorAll('.mvp-step-badge').forEach(function(badge) {
+      badge.addEventListener('click', function() {
+        var idx = parseInt(badge.dataset.step, 10);
+        var step = AP.mvpCriticalPath[idx];
+        if (!step) return;
+
+        /* Mark active badge */
+        el.querySelectorAll('.mvp-step-badge').forEach(function(b) { b.classList.remove('active'); });
+        badge.classList.add('active');
+
+        /* Build detail HTML */
+        var detailEl = document.getElementById('mvp-step-detail');
+        var complexityColor = step.complexity === 'small' ? '#3fb950' : step.complexity === 'medium' ? '#d29922' : '#f85149';
+        var d = '';
+
+        d += '<div class="mvp-step-detail-header">';
+        d += '<div class="mvp-step-detail-num">' + step.order + '</div>';
+        d += '<div>';
+        d += '<div class="mvp-step-detail-title">' + escHtml(step.title) + '</div>';
+        d += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">';
+        d += '<span class="mvp-step-badge ' + step.complexity + '" style="cursor:default;font-size:12px">' + step.complexity + '</span>';
+        d += '<span style="font-size:12px;color:#8b949e;padding:3px 10px;background:rgba(139,148,158,0.1);border-radius:12px">' + escHtml(step.owner) + '</span>';
+        d += '</div></div></div>';
+
+        /* Description */
+        d += '<div class="mvp-step-detail-section">';
+        d += '<div class="mvp-step-detail-section-title">Description</div>';
+        d += '<div class="mvp-step-detail-section-body">' + escHtml(step.description) + '</div>';
+        d += '</div>';
+
+        /* What to change */
+        if (step.whatToChange) {
+          d += '<div class="mvp-step-detail-section">';
+          d += '<div class="mvp-step-detail-section-title">What to Change</div>';
+          d += '<div class="mvp-step-detail-section-body mvp-step-detail-code">' + escHtml(step.whatToChange) + '</div>';
+          d += '</div>';
+        }
+
+        /* Why this matters */
+        var why = whyItMatters[step.order];
+        if (why) {
+          d += '<div class="mvp-step-detail-section mvp-why-matters">';
+          d += '<div class="mvp-step-detail-section-title">Why This Matters</div>';
+          d += '<div class="mvp-step-detail-section-body">' + escHtml(why) + '</div>';
+          d += '</div>';
+        }
+
+        /* Before / After */
+        var ba = beforeAfter[step.order];
+        if (ba) {
+          d += '<div class="mvp-step-detail-section">';
+          d += '<div class="mvp-step-detail-section-title">Before / After</div>';
+          d += '<div class="mvp-before-after">';
+          d += '<div class="mvp-ba-col mvp-ba-before"><div class="mvp-ba-label">Before</div><pre class="mvp-ba-code">' + escHtml(ba.before) + '</pre></div>';
+          d += '<div class="mvp-ba-col mvp-ba-after"><div class="mvp-ba-label">After</div><pre class="mvp-ba-code">' + escHtml(ba.after) + '</pre></div>';
+          d += '</div></div>';
+        }
+
+        /* Affected services */
+        if (step.affectedServices && step.affectedServices.length > 0) {
+          d += '<div class="mvp-step-detail-section">';
+          d += '<div class="mvp-step-detail-section-title">Affected Services</div>';
+          d += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
+          step.affectedServices.forEach(function(svc) {
+            d += '<span class="detail-tag mvp-svc-badge" data-svc="' + svc + '" style="cursor:pointer;border:1px solid #4f8fff;color:#4f8fff">' + svc.replace(/_/g, ' ') + '</span>';
+          });
+          d += '</div></div>';
+        }
+
+        /* Unblocks */
+        if (step.unblocks) {
+          d += '<div class="mvp-step-detail-section">';
+          d += '<div class="mvp-step-detail-section-title">Unblocks</div>';
+          d += '<div class="mvp-step-detail-section-body" style="color:#3fb950">' + escHtml(step.unblocks) + '</div>';
+          d += '</div>';
+        }
+
+        /* Copy ticket button */
+        d += '<button class="mvp-copy-ticket-detail" data-step="' + idx + '">Copy Ticket</button>';
+
+        detailEl.innerHTML = d;
+
+        /* Bind copy ticket in detail panel */
+        var copyBtn = detailEl.querySelector('.mvp-copy-ticket-detail');
+        if (copyBtn) {
+          copyBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var text = 'Title: ' + step.title + '\n\nDescription: ' + step.description + '\n\nWhat to change: ' + (step.whatToChange || '') + '\n\nComplexity: ' + step.complexity + '\nOwner: ' + step.owner + '\nAffected services: ' + (step.affectedServices || []).join(', ') + '\nUnblocks: ' + (step.unblocks || '');
+            navigator.clipboard.writeText(text).then(function() {
+              copyBtn.textContent = 'Copied!';
+              copyBtn.style.background = 'rgba(63,185,80,0.15)';
+              copyBtn.style.borderColor = '#3fb950';
+              copyBtn.style.color = '#3fb950';
+              setTimeout(function() {
+                copyBtn.textContent = 'Copy Ticket';
+                copyBtn.style.background = '';
+                copyBtn.style.borderColor = '';
+                copyBtn.style.color = '';
+              }, 2000);
+            });
+          });
+        }
+
+        /* Bind service badge clicks in detail panel */
+        detailEl.querySelectorAll('.mvp-svc-badge').forEach(function(svcBadge) {
+          svcBadge.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var svcId = svcBadge.dataset.svc;
+            if (nodeById(svcId)) {
+              showFullView(svcId);
+            }
+          });
+        });
+      });
+    });
+
     /* Bind service card clicks - open full view */
     el.querySelectorAll('.mvp-service-card').forEach(function(card) {
       card.addEventListener('click', function() {
@@ -1962,52 +2341,12 @@ function dismissOnboarding() {
       });
     });
 
-    /* Bind service badge clicks in step cards */
-    el.querySelectorAll('.mvp-svc-badge').forEach(function(badge) {
-      badge.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var svcId = badge.dataset.svc;
-        if (nodeById(svcId)) {
-          showFullView(svcId);
-        }
-      });
-    });
-
-    /* Bind copy ticket buttons */
-    el.querySelectorAll('.mvp-copy-ticket').forEach(function(btn) {
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var idx = parseInt(btn.dataset.step, 10);
-        var step = AP.mvpCriticalPath[idx];
-        if (!step) return;
-        var text = 'Title: ' + step.title + '\n\n' +
-          'Description: ' + step.description + '\n\n' +
-          'What to change: ' + (step.whatToChange || '') + '\n\n' +
-          'Complexity: ' + step.complexity + '\n' +
-          'Owner: ' + step.owner + '\n' +
-          'Affected services: ' + (step.affectedServices || []).join(', ') + '\n' +
-          'Unblocks: ' + (step.unblocks || '');
-        navigator.clipboard.writeText(text).then(function() {
-          btn.textContent = 'Copied!';
-          btn.style.color = '#3fb950';
-          btn.style.borderColor = '#3fb950';
-          setTimeout(function() {
-            btn.textContent = 'Copy Ticket';
-            btn.style.color = '#8b949e';
-            btn.style.borderColor = '#30363d';
-          }, 2000);
-        });
-      });
-    });
-
-    /* Copy ticket button hover effects */
-    el.querySelectorAll('.mvp-copy-ticket').forEach(function(btn) {
-      btn.addEventListener('mouseenter', function() { btn.style.color = '#e6edf3'; btn.style.borderColor = '#484f58'; });
-      btn.addEventListener('mouseleave', function() { if (btn.textContent === 'Copy Ticket') { btn.style.color = '#8b949e'; btn.style.borderColor = '#30363d'; } });
-    });
+    /* Auto-select step 1 on load */
+    var firstBadge = el.querySelector('.mvp-step-badge[data-step="0"]');
+    if (firstBadge) firstBadge.click();
   }
 
-  /* ── Event Listeners ──────────────────────────── */
+    /* -- Event Listeners ---------------------------- */
   document.querySelectorAll('.tab').forEach(function (t) {
     t.addEventListener('click', function () { switchView(t.dataset.view); });
   });
@@ -2028,9 +2367,9 @@ function dismissOnboarding() {
     }
   });
 
-  /* ═══════════════════════════════════════════════
-     ── FULL-PAGE DETAIL VIEW ──
-     ═══════════════════════════════════════════════ */
+  /* ===============================================
+     -- FULL-PAGE DETAIL VIEW --
+     =============================================== */
 
   var currentFullViewNodeId = null;
 
@@ -2146,7 +2485,7 @@ function dismissOnboarding() {
     }
   }
 
-  /* ── Story Tab ──────────────────────────────── */
+  /* -- Story Tab -------------------------------- */
   function renderStoryTab(nodeId) {
     var node = nodeById(nodeId);
     if (!node) return '';
@@ -2157,7 +2496,7 @@ function dismissOnboarding() {
     var story = insightsData && insightsData.stories ? insightsData.stories[nodeId] : null;
     var html = '';
 
-    /* ── Section 1: The Story (narrative) ── */
+    /* -- Section 1: The Story (narrative) -- */
     var narrative = '';
     if (story && story.narrative) {
       narrative = story.narrative;
@@ -2173,10 +2512,10 @@ function dismissOnboarding() {
       html += '</div>';
     }
 
-    /* ── Mini Architecture Diagram ── */
+    /* -- Mini Architecture Diagram -- */
     html += renderMiniDiagram(nodeId);
 
-    /* ── Section 2: Understand This Component (educate) ── */
+    /* -- Section 2: Understand This Component (educate) -- */
     if (story && story.educate) {
       html += '<div class="fv-section">';
       html += '<div class="fv-section-title">Understand This Component</div>';
@@ -2189,7 +2528,7 @@ function dismissOnboarding() {
       html += '</div>';
     }
 
-    /* ── Section 3: Timeline ── */
+    /* -- Section 3: Timeline -- */
     html += '<div class="fv-section"><div class="fv-section-title">Timeline</div>';
 
     var timelineItems = [];
@@ -2321,10 +2660,10 @@ function dismissOnboarding() {
 
     html += '</div>'; /* close fv-section for Timeline */
 
-    /* ── Section 4: Key Stats Row ── */
+    /* -- Section 4: Key Stats Row -- */
     var totalCommits = 0;
     var totalContributors = 0;
-    var daysSinceLastCommit = '—';
+    var daysSinceLastCommit = '--';
     var statusLabel = 'unknown';
     var statusClass = 'stale';
 
@@ -2386,7 +2725,7 @@ function dismissOnboarding() {
     return html;
   }
 
-  /* ── Action Plan Tab ─────────────────────────── */
+  /* -- Action Plan Tab --------------------------- */
   function renderActionPlanTab(nodeId) {
     var html = '';
     var apData = window.ACTION_PLAN_DATA;
@@ -2457,7 +2796,7 @@ function dismissOnboarding() {
     return html;
   }
 
-  /* ── Dependencies Tab ──────────────────────── */
+  /* -- Dependencies Tab ------------------------ */
   function renderDependenciesTab(nodeId) {
     var html = '';
     var blastRadius = {
@@ -2563,7 +2902,7 @@ function dismissOnboarding() {
     return html;
   }
 
-  /* ── Insights Tab ──────────────────────────── */
+  /* -- Insights Tab ---------------------------- */
   function renderInsightsTab(nodeId) {
     var insightsData = window.INSIGHTS_DATA || null;
     if (!insightsData) {
@@ -2708,8 +3047,8 @@ function dismissOnboarding() {
     return html;
   }
 
-  /* ── Init ─────────────────────────────────────── */
-  /* ── Format date for header timestamp ────────── */
+  /* -- Init --------------------------------------- */
+  /* -- Format date for header timestamp ---------- */
   function formatTimestampShort(dateStr) {
     if (!dateStr) return null;
     try {
@@ -2816,10 +3155,31 @@ function dismissOnboarding() {
     if (banner) banner.style.display = 'flex';
   }
 
+  function renderTypeLegend() {
+    var usedTypes = {};
+    D.nodes.forEach(function (n) {
+      var t = n.data.type;
+      if (t && TYPE_TAXONOMY[t]) usedTypes[t] = true;
+    });
+    var legend = document.createElement('div');
+    legend.className = 'type-legend';
+    Object.keys(usedTypes).forEach(function (t) {
+      var tax = TYPE_TAXONOMY[t];
+      var item = document.createElement('div');
+      item.className = 'type-legend-item';
+      item.innerHTML = '<span style="color:' + tax.color + ';font-size:13px">' + tax.icon + '</span>' +
+        '<span>' + tax.label + '</span>';
+      legend.appendChild(item);
+    });
+    var wrapper = document.getElementById('canvas-wrapper');
+    if (wrapper) wrapper.appendChild(legend);
+  }
+
   function init() {
     try {
       renderPipeline();
       renderSupporting();
+      renderTypeLegend();
       initFlowControls();
       updateHeaderTimestamp();
       initSearch();
@@ -2829,6 +3189,8 @@ function dismissOnboarding() {
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
           drawConnections();
+          /* Enable flow dots by default (Architecture view is default) */
+          document.getElementById('canvas-wrapper').classList.add('show-flow-dots');
         });
       });
 
@@ -2881,4 +3243,3 @@ function dismissOnboarding() {
 })();
 </script>
 </body>
-</html>
