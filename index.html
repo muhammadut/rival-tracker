@@ -670,6 +670,50 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
   .full-view-tabs{padding:0 16px}
   .fv-health-grid{grid-template-columns:repeat(2,1fr)}
 }
+
+/* ── Technical Term Tooltips ────────────────── */
+.term {
+  color: #4f8fff;
+  border-bottom: 1px dotted rgba(79,143,255,0.4);
+  cursor: help;
+  position: relative;
+}
+.term-tooltip {
+  display: none;
+  position: fixed;
+  z-index: 500;
+  background: #1c2128;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 12px 16px;
+  max-width: 320px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #c9d1d9;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  pointer-events: none;
+}
+.term-tooltip.visible { display: block; }
+.term-tooltip .tt-title { font-weight: 700; color: #e6edf3; margin-bottom: 4px; font-size: 14px; }
+.term-tooltip .tt-simple { color: #c9d1d9; margin-bottom: 6px; }
+.term-tooltip .tt-technical { color: #7d8590; font-size: 12px; font-style: italic; }
+
+/* ── Expandable Insight Cards ──────────────── */
+.fv-insight-expand { cursor: pointer; user-select: none; }
+.fv-insight-expand:hover { background: rgba(255,255,255,0.02); }
+.fv-insight-expand .fv-insight-summary { display: flex; align-items: flex-start; gap: 12px; }
+.fv-insight-toggle { color: #7d8590; font-size: 12px; flex-shrink: 0; transition: transform 0.2s; }
+.fv-insight-toggle.open { transform: rotate(90deg); }
+.fv-insight-detail { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #21262d; }
+.fv-insight-detail.open { display: block; }
+.fv-insight-detail-section { margin-bottom: 12px; }
+.fv-insight-detail-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #7d8590; margin-bottom: 4px; letter-spacing: 0.5px; }
+.fv-insight-solution { background: rgba(63,185,80,0.08); border: 1px solid rgba(63,185,80,0.2); border-radius: 6px; padding: 12px; margin-top: 8px; }
+.fv-insight-solution-text { font-size: 13px; color: #3fb950; line-height: 1.5; }
+.fv-insight-ticket { margin-top: 12px; background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 12px; position: relative; }
+.fv-insight-ticket pre { font-size: 12px; color: #c9d1d9; white-space: pre-wrap; margin: 0; font-family: 'SF Mono', Consolas, monospace; }
+.fv-insight-copy { position: absolute; top: 8px; right: 8px; background: rgba(79,143,255,0.1); border: 1px solid rgba(79,143,255,0.3); color: #4f8fff; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+.fv-insight-copy:hover { background: rgba(79,143,255,0.2); }
 </style>
 </head>
 <body>
@@ -753,10 +797,233 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
   <div id="walkthrough-overlay"></div>
   <div class="wt-callout" id="wt-callout"></div>
   <div class="wt-summary" id="wt-summary"></div>
+  <div id="term-tooltip" class="term-tooltip"></div>
 </div>
 
 <script src="insights-data.js"></script>
 <script src="data.js"></script>
+<script>
+/* ── GLOSSARY & Tooltip System ────────────────── */
+var GLOSSARY = {
+  'APIM': { title: 'API Management (APIM)', simple: 'A front gate for all API traffic. It checks who you are, limits how many requests you can make, and routes your request to the right service.', technical: 'Azure API Management gateway — handles auth, rate limiting, caching, and request routing.' },
+  'CDM': { title: 'Common Data Model (CDM)', simple: 'A universal format for insurance data. Instead of each carrier having its own format, CDM is the "one format to rule them all" that gets translated to carrier-specific formats later.', technical: 'Flat key-value dictionary with dot-separated paths like drivers[0].firstName. Carrier-agnostic data representation.' },
+  'CSIO': { title: 'CSIO (Canadian Standards for Insurance Objects)', simple: 'The industry-standard XML format that Canadian insurance companies use to exchange data. Think of it as the "language" all carriers speak.', technical: 'XML schema standard maintained by the Centre for Study of Insurance Operations. Current versions: 1.48, 1.49.' },
+  'Service Bus': { title: 'Azure Service Bus', simple: 'A message queue — like a to-do list for the system. One service drops a message, another picks it up when ready. This means services don\'t need to be online at the same time.', technical: 'Managed enterprise message broker with queues and publish-subscribe topics. Provides reliable async messaging between decoupled services.' },
+  'MongoDB': { title: 'MongoDB', simple: 'A database that stores data as flexible documents (like JSON files) rather than rigid tables. Good for data whose shape changes frequently, like insurance quotes with varying fields per carrier.', technical: 'NoSQL document database. Used here via CosmosDB with MongoDB API compatibility.' },
+  'Blazor': { title: 'Blazor Server', simple: 'A way to build web apps using C# instead of JavaScript. The page renders on the server and sends updates to the browser in real-time via WebSocket. The brokers\' quoting UI is built with this.', technical: 'Server-side Blazor with SignalR WebSocket transport. All UI logic runs on the server; DOM diffs are sent to the browser.' },
+  'BFF': { title: 'Backend For Frontend', simple: 'A thin API layer that sits between the web app and all backend services. Its job: add security headers, route requests, and keep API keys out of the browser. It has zero business logic.', technical: 'API gateway pattern — proxies requests from the Blazor frontend to downstream microservices, injecting APIM subscription keys from Key Vault.' },
+  'OAuth2': { title: 'OAuth2', simple: 'A secure way for one service to prove its identity to another without sharing passwords. The service gets a temporary token that says "I\'m allowed to do this."', technical: 'Authorization framework using bearer tokens. Used here for carrier API authentication (Aviva, SGI, Peace Hills).' },
+  'Key Vault': { title: 'Azure Key Vault', simple: 'A secure vault in the cloud where sensitive information (API keys, passwords, certificates) is stored. Services retrieve secrets at runtime instead of hardcoding them.', technical: 'Managed HSM-backed secrets store. RBAC-controlled access. Used here for APIM subscription keys and DB credentials.' },
+  'Docker': { title: 'Docker Container', simple: 'A way to package an application with everything it needs to run (code, runtime, libraries) into a single portable unit. You can run it anywhere that supports Docker.', technical: 'OCI container image built via multi-stage Dockerfile. Deployed to Azure Container Apps.' },
+  'Container App': { title: 'Azure Container App', simple: 'The place where the packaged application actually runs in Azure\'s cloud. It handles scaling (more copies when busy, fewer when quiet) and keeps the app running 24/7.', technical: 'Serverless container hosting on Azure. Supports auto-scaling based on HTTP traffic or queue depth. Runs in a Container App Environment with VNet integration.' },
+  'Orchestrator': { title: 'Rating Orchestrator', simple: 'A background worker that takes a single rating request and splits it into separate jobs — one per carrier. If you\'re quoting 3 carriers, it creates 3 independent jobs. Think of it as a dispatcher.', technical: '.NET Worker Service consuming from Service Bus ingress queue, fanning out to per-carrier work queue.' },
+  'Fan-out': { title: 'Fan-out Pattern', simple: 'Taking one input and splitting it into many parallel outputs. One quote request targeting 3 carriers becomes 3 separate carrier rating jobs that can be processed simultaneously.', technical: 'Message-level parallelism pattern. The orchestrator publishes N messages to the work queue for N carrier targets.' },
+  'Dead-letter': { title: 'Dead-letter Queue', simple: 'A special queue where messages that can\'t be processed go to "die" instead of being retried forever. Like a hospital for broken messages — someone can inspect them later.', technical: 'Service Bus DLQ. Messages are moved here after max delivery attempts or explicit dead-lettering due to malformed content.' },
+  'Polly': { title: 'Polly Resilience', simple: 'A library that automatically retries failed operations. If a network call fails, Polly waits a bit and tries again — with increasing wait times between retries.', technical: '.NET resilience and transient-fault-handling library. Supports retry, circuit breaker, timeout, and bulkhead policies.' },
+  'Bundle': { title: 'Schema Bundle', simple: 'A complete configuration package for a specific carrier+product combination. It defines what form fields to show, what validation rules to apply, and what format to use. Like a recipe card for quoting.', technical: 'JSON document containing manifest, schemaFields, formConfig, rulesEngine, i18n, and codeLists. Identified by bundle ID pattern: {carrier}.{product}.{intent}.{standard}@{version}.' }
+};
+
+(function() {
+  var tooltip = document.getElementById('term-tooltip');
+  if (!tooltip) return;
+  document.addEventListener('mouseover', function(e) {
+    var el = e.target.closest('.term');
+    if (!el) return;
+    var key = el.dataset.term || el.textContent.trim();
+    var def = GLOSSARY[key];
+    if (!def) return;
+    tooltip.innerHTML = '<div class="tt-title">' + def.title + '</div><div class="tt-simple">' + def.simple + '</div><div class="tt-technical">' + def.technical + '</div>';
+    var rect = el.getBoundingClientRect();
+    tooltip.style.left = Math.min(rect.left, window.innerWidth - 340) + 'px';
+    tooltip.style.top = (rect.bottom + 8) + 'px';
+    tooltip.classList.add('visible');
+  });
+  document.addEventListener('mouseout', function(e) {
+    if (e.target.closest('.term')) tooltip.classList.remove('visible');
+  });
+})();
+
+/* ── Narrative Formatting & Term Highlighting ── */
+function highlightTerms(text) {
+  var terms = Object.keys(GLOSSARY).sort(function(a,b) { return b.length - a.length; });
+  terms.forEach(function(term) {
+    var regex = new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
+    text = text.replace(regex, '<span class="term" data-term="' + term + '">' + term + '</span>');
+  });
+  return text;
+}
+
+function formatNarrative(narrative, nodeId) {
+  var sentences = narrative.split(/\.\s+/).filter(function(s) { return s.trim().length > 0; });
+  var html = '<ul style="list-style: none; padding: 0; margin: 0;">';
+  sentences.forEach(function(s) {
+    s = highlightTerms(s.trim());
+    if (!s.endsWith('.')) s += '.';
+    html += '<li style="padding: 6px 0; border-bottom: 1px solid #21262d; display: flex; gap: 8px;">' +
+      '<span style="color: #4f8fff; flex-shrink: 0;">\u2192</span>' +
+      '<span>' + s + '</span></li>';
+  });
+  html += '</ul>';
+  return html;
+}
+
+/* ── Mini Architecture Diagrams ────────────── */
+function renderMiniDiagram(nodeId) {
+  var diagrams = {
+    'quote_mgmt': {
+      boxes: [
+        { id: 'bff', label: 'Web BFF', x: 20, y: 10, color: '#30363d' },
+        { id: 'qm', label: 'Quote\nManagement', x: 200, y: 10, color: '#4f8fff', main: true },
+        { id: 'mongo', label: 'MongoDB', x: 380, y: 10, color: '#9c27b0' },
+        { id: 'sb', label: 'Service Bus', x: 200, y: 90, color: '#d29922' },
+        { id: 'sc', label: 'Schema\nCache', x: 380, y: 90, color: '#30363d' }
+      ],
+      arrows: [
+        { from: 'bff', to: 'qm', label: 'HTTP' },
+        { from: 'qm', to: 'mongo', label: 'Save' },
+        { from: 'qm', to: 'sb', label: 'Publish' },
+        { from: 'qm', to: 'sc', label: 'Resolve' }
+      ]
+    },
+    'orchestrator': {
+      boxes: [
+        { id: 'sb_in', label: 'Ingress\nQueue', x: 20, y: 40, color: '#d29922' },
+        { id: 'orch', label: 'Rating\nOrchestrator', x: 200, y: 40, color: '#4f8fff', main: true },
+        { id: 'blob', label: 'Blob\nStorage', x: 200, y: 120, color: '#ff9800' },
+        { id: 'sb_out', label: 'Work\nQueue', x: 380, y: 10, color: '#d29922' },
+        { id: 'sb_resp', label: 'Response\nQueue', x: 380, y: 80, color: '#d29922' }
+      ],
+      arrows: [
+        { from: 'sb_in', to: 'orch', label: 'Consume' },
+        { from: 'orch', to: 'blob', label: 'Archive' },
+        { from: 'orch', to: 'sb_out', label: 'Fan-out' },
+        { from: 'sb_resp', to: 'orch', label: 'Responses' }
+      ]
+    },
+    'carrier_connector': {
+      boxes: [
+        { id: 'sb', label: 'Work\nQueue', x: 20, y: 40, color: '#d29922' },
+        { id: 'cc', label: 'Carrier\nConnector', x: 180, y: 40, color: '#4f8fff', main: true },
+        { id: 'aviva', label: 'Aviva', x: 360, y: 0, color: '#795548' },
+        { id: 'sgi', label: 'SGI', x: 360, y: 50, color: '#795548' },
+        { id: 'ph', label: 'Peace\nHills', x: 360, y: 100, color: '#795548' },
+        { id: 'sb_resp', label: 'Response\nQueue', x: 180, y: 130, color: '#d29922' }
+      ],
+      arrows: [
+        { from: 'sb', to: 'cc', label: 'Consume' },
+        { from: 'cc', to: 'aviva', label: 'REST' },
+        { from: 'cc', to: 'sgi', label: 'SOAP' },
+        { from: 'cc', to: 'ph', label: 'REST' },
+        { from: 'cc', to: 'sb_resp', label: 'Publish' }
+      ]
+    },
+    'schema_cache': {
+      boxes: [
+        { id: 'bff', label: 'Web BFF', x: 20, y: 10, color: '#30363d' },
+        { id: 'sc', label: 'Schema\nCache', x: 200, y: 10, color: '#4f8fff', main: true },
+        { id: 'mongo', label: 'MongoDB', x: 380, y: 10, color: '#9c27b0' },
+        { id: 'sync', label: 'Internal\nSync', x: 200, y: 90, color: '#30363d' },
+        { id: 'sb', label: 'Schema\nUpdates', x: 380, y: 90, color: '#d29922' }
+      ],
+      arrows: [
+        { from: 'bff', to: 'sc', label: 'GET' },
+        { from: 'sc', to: 'mongo', label: 'Read/Write' },
+        { from: 'sync', to: 'sc', label: 'Upsert' },
+        { from: 'sb', to: 'sc', label: 'Notify' }
+      ]
+    },
+    'rpm_client': {
+      boxes: [
+        { id: 'broker', label: 'Broker', x: 20, y: 40, color: '#607d8b' },
+        { id: 'rpm', label: 'RPM Client\n(Blazor)', x: 180, y: 40, color: '#4f8fff', main: true },
+        { id: 'bff', label: 'Web BFF', x: 360, y: 40, color: '#30363d' },
+        { id: 'schema', label: 'Schema\n(via BFF)', x: 360, y: 120, color: '#30363d' }
+      ],
+      arrows: [
+        { from: 'broker', to: 'rpm', label: 'Browser' },
+        { from: 'rpm', to: 'bff', label: 'HTTP' },
+        { from: 'rpm', to: 'schema', label: 'Load form' }
+      ]
+    },
+    'bff': {
+      boxes: [
+        { id: 'rpm', label: 'RPM\nClient', x: 20, y: 40, color: '#30363d' },
+        { id: 'bff', label: 'Web BFF', x: 180, y: 40, color: '#4f8fff', main: true },
+        { id: 'kv', label: 'Key Vault', x: 180, y: 120, color: '#f85149' },
+        { id: 'qm', label: 'Quote\nMgmt', x: 360, y: 0, color: '#30363d' },
+        { id: 'journal', label: 'Journal\nAPIs', x: 360, y: 50, color: '#30363d' },
+        { id: 'config', label: 'Config\nAPI', x: 360, y: 100, color: '#30363d' }
+      ],
+      arrows: [
+        { from: 'rpm', to: 'bff', label: 'All calls' },
+        { from: 'bff', to: 'kv', label: 'Get keys' },
+        { from: 'bff', to: 'qm', label: '+ APIM key' },
+        { from: 'bff', to: 'journal', label: '+ APIM key' },
+        { from: 'bff', to: 'config', label: '+ APIM key' }
+      ]
+    }
+  };
+
+  var d = diagrams[nodeId];
+  if (!d) return '';
+
+  var maxX = 0, maxY = 0;
+  d.boxes.forEach(function(b) { maxX = Math.max(maxX, b.x + 120); maxY = Math.max(maxY, b.y + 60); });
+
+  var svg = '<svg viewBox="0 0 ' + (maxX + 20) + ' ' + (maxY + 30) + '" style="width:100%;max-width:520px;height:auto;display:block;margin:0 auto 16px;">';
+
+  svg += '<defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#30363d"/></marker></defs>';
+
+  d.arrows.forEach(function(a) {
+    var fromBox = d.boxes.find(function(b) { return b.id === a.from; });
+    var toBox = d.boxes.find(function(b) { return b.id === a.to; });
+    if (!fromBox || !toBox) return;
+    var x1 = fromBox.x + 55, y1 = fromBox.y + 22;
+    var x2 = toBox.x + 55, y2 = toBox.y + 22;
+    if (x2 > x1 + 50) { x1 = fromBox.x + 110; x2 = toBox.x; }
+    else if (x2 < x1 - 50) { x1 = fromBox.x; x2 = toBox.x + 110; }
+    if (y2 > y1 + 30) { y1 = fromBox.y + 44; y2 = toBox.y; x1 = fromBox.x + 55; x2 = toBox.x + 55; }
+    svg += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="#30363d" stroke-width="1.5" marker-end="url(#arrowhead)"/>';
+    var mx = (x1 + x2) / 2, my = (y1 + y2) / 2 - 6;
+    svg += '<text x="' + mx + '" y="' + my + '" text-anchor="middle" fill="#7d8590" font-size="10" font-family="sans-serif">' + a.label + '</text>';
+  });
+
+  d.boxes.forEach(function(b) {
+    var fill = b.main ? 'rgba(79,143,255,0.15)' : 'rgba(22,27,34,0.8)';
+    var stroke = b.main ? '#4f8fff' : (b.color || '#30363d');
+    var strokeW = b.main ? 2 : 1;
+    svg += '<rect x="' + b.x + '" y="' + b.y + '" width="110" height="44" rx="6" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + strokeW + '"/>';
+    var lines = b.label.split('\n');
+    var textY = lines.length > 1 ? b.y + 18 : b.y + 26;
+    lines.forEach(function(line, i) {
+      svg += '<text x="' + (b.x + 55) + '" y="' + (textY + i * 14) + '" text-anchor="middle" fill="#e6edf3" font-size="11" font-family="sans-serif">' + line + '</text>';
+    });
+  });
+
+  svg += '</svg>';
+  return '<div class="fv-section"><div class="fv-section-title">Component Diagram</div>' + svg + '</div>';
+}
+
+/* ── Expandable Insight Helpers ────────────── */
+function toggleInsightDetail(el) {
+  var detail = el.querySelector('.fv-insight-detail');
+  var toggle = el.querySelector('.fv-insight-toggle');
+  if (detail && toggle) {
+    detail.classList.toggle('open');
+    toggle.classList.toggle('open');
+  }
+}
+
+function copyTicket(btn) {
+  var pre = btn.parentElement.querySelector('pre');
+  if (pre) {
+    navigator.clipboard.writeText(pre.textContent).then(function() {
+      btn.textContent = 'Copied!';
+      setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+    });
+  }
+}
+</script>
 <script>
 (function () {
   'use strict';
@@ -2224,15 +2491,18 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
     if (narrative) {
       html += '<div class="fv-section">';
       html += '<div class="fv-section-title">The Story</div>';
-      html += '<div class="fv-narrative">' + esc(narrative) + '</div>';
+      html += '<div class="fv-narrative">' + formatNarrative(narrative, nodeId) + '</div>';
       html += '</div>';
     }
+
+    /* ── Mini Architecture Diagram ── */
+    html += renderMiniDiagram(nodeId);
 
     /* ── Section 2: Understand This Component (educate) ── */
     if (story && story.educate) {
       html += '<div class="fv-section">';
       html += '<div class="fv-section-title">Understand This Component</div>';
-      html += '<div class="fv-educate">' + story.educate + '</div>';
+      html += '<div class="fv-educate">' + highlightTerms(story.educate) + '</div>';
       html += '</div>';
     } else if (!narrative && WHAT_THIS_DOES[nodeId]) {
       html += '<div class="fv-section">';
@@ -2633,19 +2903,72 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
       return sa - sb;
     });
 
-    /* Render insight cards */
+    /* Render expandable insight cards */
+    var nodeLabel = '';
+    var nodeObj = nodeById(nodeId);
+    if (nodeObj) nodeLabel = nodeObj.data.label;
+
     allInsights.forEach(function (insight) {
       var sev = (insight.severity || 'info').toLowerCase();
-      html += '<div class="fv-insight ' + sev + '">';
+      var sevUpper = sev.toUpperCase();
+      var title = insight.title || 'Untitled';
+      var desc = insight.description || '';
+      var evidence = insight.evidence || '';
+      var rec = insight.recommendation || '';
+      var example = insight.example || 'See description';
+      var category = insight.category || '';
+
+      var ticketText = 'Bug: ' + title + '\nPriority: ' + sevUpper + '\nComponent: ' + nodeLabel + '\nDescription: ' + desc + '\nEvidence: ' + evidence + '\nImpact: ' + example + '\nSuggested Fix: ' + rec;
+
+      html += '<div class="fv-insight ' + sev + ' fv-insight-expand" onclick="toggleInsightDetail(this)">';
+      html += '<div class="fv-insight-summary">';
+      html += '<span class="fv-insight-toggle">\u25B6</span>';
+      html += '<div>';
       html += '<div class="fv-insight-header">';
-      html += '<span class="fv-insight-severity ' + sev + '">' + esc(sev) + '</span>';
-      if (insight.category) html += '<span class="fv-insight-category">' + esc(insight.category) + '</span>';
+      html += '<span class="fv-insight-severity ' + sev + '">' + esc(sevUpper) + '</span>';
+      if (category) html += '<span class="fv-insight-category">' + esc(category) + '</span>';
       html += '</div>';
-      if (insight.title) html += '<div class="fv-insight-title">' + esc(insight.title) + '</div>';
-      if (insight.description) html += '<div class="fv-insight-desc">' + esc(insight.description) + '</div>';
-      if (insight.evidence) html += '<div class="fv-insight-evidence">' + esc(insight.evidence) + '</div>';
-      if (insight.recommendation) html += '<div class="fv-insight-rec">' + esc(insight.recommendation) + '</div>';
+      html += '<div class="fv-insight-title">' + esc(title) + '</div>';
       html += '</div>';
+      html += '</div>'; /* close fv-insight-summary */
+
+      html += '<div class="fv-insight-detail">';
+
+      if (desc) {
+        html += '<div class="fv-insight-detail-section">';
+        html += '<div class="fv-insight-detail-label">What We Found</div>';
+        html += '<div class="fv-insight-desc">' + esc(desc) + '</div>';
+        html += '</div>';
+      }
+
+      if (evidence) {
+        html += '<div class="fv-insight-detail-section">';
+        html += '<div class="fv-insight-detail-label">Evidence</div>';
+        html += '<div class="fv-insight-evidence">' + esc(evidence) + '</div>';
+        html += '</div>';
+      }
+
+      if (example) {
+        html += '<div class="fv-insight-detail-section">';
+        html += '<div class="fv-insight-detail-label">Why This Matters</div>';
+        html += '<div class="fv-insight-desc">' + esc(example) + '</div>';
+        html += '</div>';
+      }
+
+      if (rec) {
+        html += '<div class="fv-insight-solution">';
+        html += '<div class="fv-insight-detail-label" style="color:#3fb950">Suggested Fix</div>';
+        html += '<div class="fv-insight-solution-text">' + esc(rec) + '</div>';
+        html += '</div>';
+      }
+
+      html += '<div class="fv-insight-ticket">';
+      html += '<button class="fv-insight-copy" onclick="event.stopPropagation(); copyTicket(this)">Copy</button>';
+      html += '<pre>' + esc(ticketText) + '</pre>';
+      html += '</div>';
+
+      html += '</div>'; /* close fv-insight-detail */
+      html += '</div>'; /* close fv-insight */
     });
 
     return html;
