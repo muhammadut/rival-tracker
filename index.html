@@ -525,6 +525,144 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
 .fv-insight-count.warning { color: #d29922; }
 .fv-insight-count.info { color: #4f8fff; }
 
+/* ── Educate Section ─────────────────────────── */
+.fv-educate {
+  padding: 24px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  line-height: 1.7;
+  color: #c9d1d9;
+  font-size: 14px;
+}
+.fv-educate h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e6edf3;
+  margin: 24px 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #21262d;
+}
+.fv-educate h3:first-child { margin-top: 0; }
+.fv-educate h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e6edf3;
+  margin: 16px 0 8px 0;
+}
+.fv-educate p { margin-bottom: 12px; }
+.fv-educate code {
+  background: rgba(79,143,255,0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #4f8fff;
+  font-family: 'SF Mono', Consolas, monospace;
+}
+.fv-educate pre {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #c9d1d9;
+  font-family: 'SF Mono', Consolas, monospace;
+  margin: 12px 0;
+}
+.fv-educate ol, .fv-educate ul {
+  padding-left: 20px;
+  margin-bottom: 12px;
+}
+.fv-educate li {
+  margin-bottom: 6px;
+}
+.fv-educate strong { color: #e6edf3; }
+.fv-educate .connection-example {
+  background: rgba(79,143,255,0.05);
+  border: 1px solid rgba(79,143,255,0.2);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+}
+
+/* ── Story Stats Row ─────────────────────────── */
+.fv-story-stats {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.fv-story-stat {
+  flex: 1;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-align: center;
+}
+.fv-story-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #e6edf3;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.fv-story-stat-label {
+  font-size: 11px;
+  color: #7d8590;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.fv-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.fv-status-badge.active { background: rgba(63,185,80,0.15); color: #3fb950; }
+.fv-status-badge.stale { background: rgba(210,153,34,0.15); color: #d29922; }
+.fv-status-badge.dormant { background: rgba(248,81,73,0.15); color: #f85149; }
+
+/* ── Recent Commits List ─────────────────────── */
+.fv-recent-commits {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+}
+.fv-recent-commits-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #7d8590;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+.fv-commit-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid #161b22;
+  font-size: 12px;
+}
+.fv-commit-item:last-child { border-bottom: none; }
+.fv-commit-date { color: #484f58; white-space: nowrap; min-width: 80px; }
+.fv-commit-msg { color: #c9d1d9; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fv-commit-author { color: #7d8590; white-space: nowrap; }
+
+/* ── Timeline dot color variants ─────────────── */
+.fv-timeline-dot.planning { background: #4f8fff; box-shadow: 0 0 0 3px rgba(79,143,255,0.2); }
+.fv-timeline-dot.development { background: #bc6dff; box-shadow: 0 0 0 3px rgba(188,109,255,0.2); }
+.fv-timeline-dot.milestone { background: #3fb950; box-shadow: 0 0 0 3px rgba(63,185,80,0.2); }
+.fv-timeline-dot.risk { background: #d29922; box-shadow: 0 0 0 3px rgba(210,153,34,0.2); }
+
 @media(max-width:900px){
   .full-view-hero{padding:20px 16px}
   .full-view-content{padding:16px 16px 40px}
@@ -2071,29 +2209,46 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
     var meta = metaFor(nodeId);
     var enrichment = getEnrichment(nodeId);
     var insightsData = window.INSIGHTS_DATA || null;
+    var story = insightsData && insightsData.stories ? insightsData.stories[nodeId] : null;
     var html = '';
 
-    /* Narrative block */
+    /* ── Section 1: The Story (narrative) ── */
     var narrative = '';
-    if (insightsData && insightsData.stories && insightsData.stories[nodeId] && insightsData.stories[nodeId].narrative) {
-      narrative = insightsData.stories[nodeId].narrative;
+    if (story && story.narrative) {
+      narrative = story.narrative;
     } else if (WHAT_THIS_DOES[nodeId]) {
       narrative = WHAT_THIS_DOES[nodeId];
     } else if (meta.description) {
       narrative = meta.description;
     }
     if (narrative) {
+      html += '<div class="fv-section">';
+      html += '<div class="fv-section-title">The Story</div>';
       html += '<div class="fv-narrative">' + esc(narrative) + '</div>';
+      html += '</div>';
     }
 
-    /* Timeline */
+    /* ── Section 2: Understand This Component (educate) ── */
+    if (story && story.educate) {
+      html += '<div class="fv-section">';
+      html += '<div class="fv-section-title">Understand This Component</div>';
+      html += '<div class="fv-educate">' + story.educate + '</div>';
+      html += '</div>';
+    } else if (!narrative && WHAT_THIS_DOES[nodeId]) {
+      html += '<div class="fv-section">';
+      html += '<div class="fv-section-title">What This Does</div>';
+      html += '<div class="fv-narrative">' + esc(WHAT_THIS_DOES[nodeId]) + '</div>';
+      html += '</div>';
+    }
+
+    /* ── Section 3: Timeline ── */
     html += '<div class="fv-section"><div class="fv-section-title">Timeline</div>';
 
     var timelineItems = [];
 
     /* Check INSIGHTS_DATA for phases first */
-    if (insightsData && insightsData.stories && insightsData.stories[nodeId] && insightsData.stories[nodeId].phases) {
-      insightsData.stories[nodeId].phases.forEach(function (phase) {
+    if (story && story.phases && story.phases.length) {
+      story.phases.forEach(function (phase) {
         timelineItems.push({
           date: phase.date || '',
           title: phase.title || '',
@@ -2115,7 +2270,7 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
           date: relativeDate(first.date || first.authorDate),
           title: 'Project Created',
           desc: firstMsg,
-          dotClass: 'active'
+          dotClass: 'milestone'
         });
       }
 
@@ -2128,7 +2283,7 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
             date: relativeDate(c.date || c.authorDate),
             title: msg.length > 60 ? msg.substring(0, 57) + '...' : msg,
             desc: (c.author || c.authorName || 'Unknown'),
-            dotClass: 'active'
+            dotClass: 'development'
           });
         }
       });
@@ -2147,7 +2302,7 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
               date: relativeDate(pr.date || pr.closedDate || pr.creationDate),
               title: 'PR Merged: ' + (pr.title || 'Untitled'),
               desc: pr.author || pr.createdBy || '',
-              dotClass: 'active'
+              dotClass: 'milestone'
             });
           }
         });
@@ -2159,7 +2314,7 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
         var lastDate = new Date(lastCommit.date || lastCommit.authorDate || 0);
         var daysSince = Math.floor((new Date() - lastDate) / 86400000);
         var stateTitle = daysSince > 30 ? (daysSince + ' days since last activity') : ('Active - last commit ' + relativeDate(lastCommit.date || lastCommit.authorDate));
-        var stateDot = daysSince > 30 ? 'warning' : 'active';
+        var stateDot = daysSince > 30 ? 'risk' : 'active';
         if (daysSince > 90) stateDot = 'critical';
         timelineItems.push({
           date: 'Current',
@@ -2187,7 +2342,98 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
         (item.desc ? '<div class="fv-timeline-desc">' + esc(item.desc) + '</div>' : '') +
         '</div>';
     });
-    html += '</div></div>';
+    html += '</div>';
+
+    /* Recent commits compact list (from enrichment, shown below timeline phases) */
+    if (enrichment && enrichment.commits && enrichment.commits.length) {
+      var recentCommits = enrichment.commits.slice().sort(function (a, b) {
+        return new Date(b.date || b.authorDate || 0) - new Date(a.date || a.authorDate || 0);
+      }).slice(0, 6);
+      html += '<div class="fv-recent-commits">';
+      html += '<div class="fv-recent-commits-title">Recent Commits</div>';
+      recentCommits.forEach(function (c) {
+        var msg = (c.message || c.comment || '').split('\n')[0];
+        if (msg.length > 70) msg = msg.substring(0, 67) + '...';
+        var dateStr = '';
+        var d = c.date || c.authorDate;
+        if (d) {
+          var dt = new Date(d);
+          dateStr = (dt.getMonth() + 1) + '/' + dt.getDate() + '/' + dt.getFullYear();
+        }
+        var author = c.author || c.authorName || '';
+        if (author.length > 15) author = author.substring(0, 12) + '...';
+        html += '<div class="fv-commit-item">' +
+          '<span class="fv-commit-date">' + esc(dateStr) + '</span>' +
+          '<span class="fv-commit-msg">' + esc(msg) + '</span>' +
+          '<span class="fv-commit-author">' + esc(author) + '</span>' +
+          '</div>';
+      });
+      html += '</div>';
+    }
+
+    html += '</div>'; /* close fv-section for Timeline */
+
+    /* ── Section 4: Key Stats Row ── */
+    var totalCommits = 0;
+    var totalContributors = 0;
+    var daysSinceLastCommit = '—';
+    var statusLabel = 'unknown';
+    var statusClass = 'stale';
+
+    if (enrichment) {
+      if (enrichment.commits && enrichment.commits.length) {
+        totalCommits = enrichment.commits.length;
+
+        /* Count unique contributors */
+        var contributorSet = {};
+        enrichment.commits.forEach(function (c) {
+          var name = c.author || c.authorName || '';
+          if (name) contributorSet[name.toLowerCase()] = true;
+        });
+        totalContributors = Object.keys(contributorSet).length;
+
+        /* Days since last commit */
+        var sorted = enrichment.commits.slice().sort(function (a, b) {
+          return new Date(b.date || b.authorDate || 0) - new Date(a.date || a.authorDate || 0);
+        });
+        var lastDt = new Date(sorted[0].date || sorted[0].authorDate || 0);
+        var daysAgo = Math.floor((new Date() - lastDt) / 86400000);
+        daysSinceLastCommit = daysAgo;
+
+        if (daysAgo <= 14) {
+          statusLabel = 'Active';
+          statusClass = 'active';
+        } else if (daysAgo <= 60) {
+          statusLabel = 'Stale';
+          statusClass = 'stale';
+        } else {
+          statusLabel = 'Dormant';
+          statusClass = 'dormant';
+        }
+      }
+    }
+
+    html += '<div class="fv-section">';
+    html += '<div class="fv-section-title">Key Stats</div>';
+    html += '<div class="fv-story-stats">';
+    html += '<div class="fv-story-stat">' +
+      '<div class="fv-story-stat-value">' + totalCommits + '</div>' +
+      '<div class="fv-story-stat-label">Total Commits</div>' +
+      '</div>';
+    html += '<div class="fv-story-stat">' +
+      '<div class="fv-story-stat-value">' + totalContributors + '</div>' +
+      '<div class="fv-story-stat-label">Contributors</div>' +
+      '</div>';
+    html += '<div class="fv-story-stat">' +
+      '<div class="fv-story-stat-value">' + daysSinceLastCommit + '</div>' +
+      '<div class="fv-story-stat-label">Days Since Commit</div>' +
+      '</div>';
+    html += '<div class="fv-story-stat">' +
+      '<div class="fv-story-stat-value"><span class="fv-status-badge ' + statusClass + '">' + statusLabel + '</span></div>' +
+      '<div class="fv-story-stat-label">Status</div>' +
+      '</div>';
+    html += '</div>';
+    html += '</div>';
 
     return html;
   }
@@ -2219,7 +2465,8 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
     }
 
     if (insightsData && insightsData.healthScores && insightsData.healthScores[nodeId] != null) {
-      healthScore = insightsData.healthScores[nodeId];
+      var hs = insightsData.healthScores[nodeId];
+      healthScore = typeof hs === 'object' ? (hs.overall || 0) : hs;
     } else {
       /* Compute from available data */
       var activityScore = 0;
