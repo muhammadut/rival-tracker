@@ -3468,6 +3468,7 @@ window.dismissOnboarding = function() {
       function renderSystemReview() {
         var D = window.SYSTEM_REVIEW_DATA;
         if (!D) { document.getElementById('sr-dashboard').innerHTML = '<p style="color:#8b949e;padding:40px">System review data not loaded.</p>'; return; }
+        try {
 
         var html = '';
 
@@ -3625,6 +3626,10 @@ window.dismissOnboarding = function() {
         html += '</div></div>';
 
         document.getElementById('sr-dashboard').innerHTML = html;
+        } catch(e) {
+          console.error('System Review render error:', e);
+          document.getElementById('sr-dashboard').innerHTML = '<div style="padding:40px;color:#f85149"><h3>Render Error</h3><pre>' + e.message + '\n' + e.stack + '</pre></div>';
+        }
       }
 
       window.toggleCompDetail = function(cid) {
