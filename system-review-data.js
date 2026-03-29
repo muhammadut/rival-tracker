@@ -33,12 +33,18 @@ window.SYSTEM_REVIEW_DATA = {
         { id: 'p0_1', text: 'Request sandbox Azure subscription with: Container Apps, Service Bus, Cosmos DB (MongoDB API), SQL Server, Key Vault, Blob Storage, APIM, App Insights', status: 'not_started', critical: true },
         { id: 'p0_2', text: 'Request dev subscription (mirrors sandbox but team-accessible)', status: 'not_started', critical: true },
         { id: 'p0_3', text: 'Request prod subscription (locked down, deployment-only access)', status: 'not_started', critical: false },
-        { id: 'p0_4', text: 'Ensure Azure AD app registration for RPM Client authentication', status: 'not_started', critical: true },
+        { id: 'p0_4', text: 'Verify Azure AD app registration: ClientSecret exists, redirect URIs include dev/local URLs', status: 'not_started', critical: true },
         { id: 'p0_5', text: 'Provision Service Bus namespace: sbns-ratingplatform-{env}-001', status: 'not_started', critical: true },
         { id: 'p0_6', text: 'Create Service Bus queues programmatically via Bicep: sbq-rating-requests, sbq-rating-jobs, sbq-rating-responses', status: 'not_started', critical: true },
         { id: 'p0_7', text: 'Provision Cosmos DB account with MongoDB API for Quote Management', status: 'not_started', critical: true },
         { id: 'p0_8', text: 'Provision SQL Server for ASP.NET Identity (RPM Client requirement)', status: 'not_started', critical: true },
-        { id: 'p0_9', text: 'Provision Key Vault for carrier OAuth2 credentials and connection strings', status: 'not_started', critical: false }
+        { id: 'p0_9', text: 'Provision Key Vault for carrier OAuth2 credentials and connection strings', status: 'not_started', critical: false },
+        { id: 'p0_10', text: 'Run EF migrations for ASP.NET Identity schema on SQL Server', status: 'not_started', critical: true },
+        { id: 'p0_11', text: 'Seed demo user(s) in AspNetUsers table with email and roles', status: 'not_started', critical: true },
+        { id: 'p0_12', text: 'Hold kickoff meeting: decide contract fix direction, response path, carrier target strategy', status: 'not_started', critical: true },
+        { id: 'p0_13', text: 'Start carrier credential requests for sandbox access (2-6 weeks lead time)', status: 'not_started', critical: true },
+        { id: 'p0_14', text: 'Check Cssi.Schemas.Csio.Xml .NET 9 compatibility (1 hour — determines 5 vs 18 day effort for Phase 4)', status: 'not_started', critical: true },
+        { id: 'p0_15', text: 'Ensure all devs have NuGet PATs for private feed and az login with Service Bus RBAC roles', status: 'not_started', critical: false }
       ]
     },
     {
@@ -64,11 +70,11 @@ window.SYSTEM_REVIEW_DATA = {
     {
       id: 'phase_2',
       title: 'Shared Contracts Package',
-      subtitle: 'Single source of truth',
+      subtitle: 'Single source of truth — recommended for Tier 2, optional for Tier 1 MVP',
       color: '#3fb950',
       icon: '📦',
       status: 'not_started',
-      description: 'Create Rival.Rating.Contracts NuGet package with shared message types, CDM models, and queue name constants. This eliminates the 4 duplicate copies of CdmData and fixes all contract drift bugs.',
+      description: 'Create Rival.Rating.Contracts NuGet package with shared message types, CDM models, and queue name constants. This eliminates the 4 duplicate copies of CdmData and fixes all contract drift bugs. Note: for Tier 1 MVP, in-place contract fixes (4-6 hours) are faster than creating a full NuGet package (2-3 days).',
       owner: 'Tariq',
       effort: '2-3 days',
       items: [
@@ -104,17 +110,22 @@ window.SYSTEM_REVIEW_DATA = {
         { id: 'p3_9', text: 'RatingOrchestrator: Verify it receives messages after QuoteManagement fixes', status: 'not_started', critical: true },
         { id: 'p3_10', text: 'CarrierConnector: Fix health check (hardcoded to always return Healthy)', status: 'not_started', critical: false },
         { id: 'p3_11', text: 'RPM Client: Fix GetOffers polling (currently calls immediately, needs async wait)', status: 'not_started', critical: true },
-        { id: 'p3_12', text: 'SchemaCache: Verify bundles are seeded with Alberta PersAuto data', status: 'not_started', critical: true }
+        { id: 'p3_12', text: 'SchemaCache: Verify bundles are seeded with Alberta PersAuto data', status: 'not_started', critical: true },
+        { id: 'p3_13', text: 'Fix carrierTarget vs carrierContext property mismatch (Orchestrator sends carrierTarget, Connector expects carrierContext)', status: 'not_started', critical: true },
+        { id: 'p3_14', text: 'Fix response format mismatch: CarrierConnector sends flat, QuoteManagement expects nested carrierResult', status: 'not_started', critical: true },
+        { id: 'p3_15', text: 'Fix Raw nullability mismatch in DynamicFieldValue across services', status: 'not_started', critical: false },
+        { id: 'p3_16', text: 'Fix RatingResponseReader: dead-letter on JsonException instead of abandon (prevents infinite retry)', status: 'not_started', critical: false },
+        { id: 'p3_17', text: 'Remove PII from logs: driver names, DOBs, addresses should not be in structured logs', status: 'not_started', critical: false }
       ]
     },
     {
       id: 'phase_4',
       title: 'CDM-to-CSIO Converter',
-      subtitle: 'The missing piece',
+      subtitle: 'The missing piece — Tier 2 (not required for MVP demo)',
       color: '#f85149',
       icon: '🔄',
       status: 'not_started',
-      description: 'Build the transformer that converts CDM fields into carrier-specific CSIO/ACORD XML. This is the critical gap — adapters are built but have nothing to send. Use VB.NET converter knowledge from czo-extractor as the reference for field mappings.',
+      description: 'This phase is optional for the MVP demo. The CarrierConnector\'s PremiumCalculator simulator can produce realistic fake premiums for the demo. This phase is required for real carrier integration (Tier 2). Build the transformer that converts CDM fields into carrier-specific CSIO/ACORD XML. Use VB.NET converter knowledge from czo-extractor as the reference for field mappings.',
       owner: 'Tariq',
       effort: '5-18 days (depends on CSIO package compatibility)',
       items: [
@@ -135,7 +146,7 @@ window.SYSTEM_REVIEW_DATA = {
       color: '#f778ba',
       icon: '🎯',
       status: 'not_started',
-      description: 'Connect everything. Submit a real Alberta auto quote from the RPM Client, watch it flow through every service, and get a real price back from a carrier.',
+      description: 'Connect everything. Phase 5 can run with the simulator (Tier 1) OR with real carrier APIs (Tier 2). For MVP demo, the simulator path proves the pipeline works end-to-end without needing carrier credentials. Submit a real Alberta auto quote from the RPM Client, watch it flow through every service, and get a price back.',
       owner: 'Tariq + Team',
       effort: '3-5 days',
       items: [
@@ -230,7 +241,7 @@ window.SYSTEM_REVIEW_DATA = {
       keyIssues: [
         { severity: 'critical', issue: 'Wrong Service Bus namespace', detail: 'Configured as sbns-rating-dev-001 but should be sbns-ratingplatform-dev-001. Messages go to a non-existent namespace.' },
         { severity: 'critical', issue: 'Wrong queue names', detail: 'Uses sbq-rating-requests-dev but Orchestrator listens on sbq-initial-rating-requests. Messages are never consumed.' },
-        { severity: 'critical', issue: 'ServiceBusSettings not registered in DI', detail: 'IOptions<ServiceBusSettings> is injected but never registered in Program.cs. Service crashes on startup.' },
+        { severity: 'warning', issue: 'ServiceBusSettings DI registration uses different class name', detail: 'IOptions<ServiceBusSettings> is injected but the registration uses RatingServiceBusSettings (different class name). The settings class exists and is registered, but the name mismatch may cause confusion. Verify the correct class is resolved at runtime.' },
         { severity: 'warning', issue: 'No environment-specific config', detail: 'Only one appsettings.json with hardcoded dev values. No appsettings.Production.json.' }
       ]
     },
@@ -269,7 +280,7 @@ window.SYSTEM_REVIEW_DATA = {
       verdict: 'Architecturally functional. The fan-out logic is correct and simple. Main issue is the message contract mismatch — it sends "carrierTarget" but CarrierConnector expects "carrierContext". Will be fixed by shared contracts package.',
       criteria: [
         { principle: 'deployable', status: 'fail', note: 'No CI/CD pipeline exists' },
-        { principle: 'contract_aligned', status: 'fail', note: 'Own copies of CDM models. Uses double for NumberValue (wrong — should be decimal).' },
+        { principle: 'contract_aligned', status: 'fail', note: 'Own copies of CDM models. Uses double for NumberValue (matches CarrierConnector but should be decimal for currency precision).' },
         { principle: 'scalable', status: 'pass', note: 'Stateless worker service — scales by adding instances' },
         { principle: 'observable', status: 'pass', note: 'OpenTelemetry tracing + App Insights configured' },
         { principle: 'resilient', status: 'pass', note: 'Dead-letter handling, message abandonment on transient errors' },
@@ -281,8 +292,7 @@ window.SYSTEM_REVIEW_DATA = {
         { name: 'Blob Storage', purpose: 'Archives rating requests for audit trail', fit: 'Good fit — cheap, immutable storage for compliance/debugging.', action: 'Provision storage account. Best-effort write (non-blocking) is the right pattern.' }
       ],
       keyIssues: [
-        { severity: 'critical', issue: 'carrierTarget vs carrierContext property mismatch', detail: 'Sends CarrierRatingMessage with "carrierTarget" JSON property. CarrierConnector deserializes with "carrierContext". Result: carrier config is always null.' },
-        { severity: 'warning', issue: 'double NumberValue', detail: 'Uses double instead of decimal for DynamicFieldValue.NumberValue. Causes floating-point precision loss on currency amounts.' }
+        { severity: 'critical', issue: 'carrierTarget vs carrierContext property mismatch', detail: 'Sends CarrierRatingMessage with "carrierTarget" JSON property. CarrierConnector deserializes with "carrierContext". Result: carrier config is always null.' }
       ]
     },
 
@@ -521,7 +531,7 @@ window.SYSTEM_REVIEW_DATA = {
       'Schema-driven forms enable adding carriers without code changes'
     ],
     weaknesses: [
-      'Contract drift: 4 copies of CdmData with decimal vs double mismatch',
+      'Contract drift: 4 copies of CdmData with no shared package — property names diverge (carrierTarget vs carrierContext)',
       'Property name mismatch: carrierTarget vs carrierContext breaks deserialization',
       'Response structure mismatch: flat vs nested means prices never reach frontend',
       'Zero CI/CD pipelines for Rating Platform services',
@@ -549,10 +559,10 @@ window.SYSTEM_REVIEW_DATA = {
     },
     {
       id: 'track_converter',
-      label: 'CDM-to-CSIO',
+      label: 'CDM-to-CSIO (Tier 2)',
       color: '#f85149',
       phases: ['phase_4'],
-      description: 'The missing converter — can start independently'
+      description: 'The missing converter — can start independently. Optional for MVP demo.'
     },
     {
       id: 'track_integration',
@@ -571,7 +581,7 @@ window.SYSTEM_REVIEW_DATA = {
   ],
   parallelGroups: [
     { label: 'Can run simultaneously', phases: [['phase_0','phase_1'], ['phase_2','phase_3'], ['phase_4']], note: 'Infrastructure, Contracts, and Converter work are independent — assign to different people or work streams' },
-    { label: 'Must wait', phases: [['phase_5']], note: 'Integration testing requires all three tracks to be complete' }
+    { label: 'Must wait', phases: [['phase_5']], note: 'Integration testing requires Infrastructure and Component Fixes complete. Can use simulator (Tier 1) without CDM-to-CSIO converter.' }
   ],
-  disclaimer: 'This plan is subject to change as we validate infrastructure access and carrier API availability. Phase estimates assume dedicated engineering time.'
+  disclaimer: 'This plan is subject to change as we validate infrastructure access and carrier API availability. Tier 1 (Simulator MVP) can demo in 2-3 weeks. Tier 2 (Real Carriers) adds 3-6 weeks depending on CSIO package compatibility and carrier credential lead times.'
 };
