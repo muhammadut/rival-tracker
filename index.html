@@ -82,6 +82,7 @@ if (isLocal || sessionStorage.getItem('archex-auth') === 'true') {
         <button class="tab active" data-view="architecture">Architecture</button>
         <button class="tab" data-view="dataflow">Data Flow</button>
         <button class="tab" data-view="mvp">MVP Progress</button>
+        <button class="tab" data-view="systemreview">System Review</button>
       </div>
       <button class="watch-flow-btn" id="watch-flow-btn">&#9654; Watch Quote Flow</button>
     </div>
@@ -101,6 +102,7 @@ if (isLocal || sessionStorage.getItem('archex-auth') === 'true') {
   </main>
 
   <div id="mvp-dashboard"></div>
+  <div id="sr-dashboard"></div>
 
   <div id="detail-overlay"></div>
   <div id="detail-panel">
@@ -157,6 +159,7 @@ if (isLocal || sessionStorage.getItem('archex-auth') === 'true') {
 <script src="actionplan-data.js"></script>
 <script src="mvp-v2-data.js"></script>
 <script src="insights-data.js"></script>
+<script src="system-review-data.js"></script>
 <script src="data.js"></script>
 <script>
 /* -- GLOSSARY & Tooltip System ------------------ */
@@ -1633,13 +1636,21 @@ window.dismissOnboarding = function() {
     /* MVP dashboard toggle */
     var mainEl = document.querySelector('main');
     var mvpEl = document.getElementById('mvp-dashboard');
+    var srEl = document.getElementById('sr-dashboard');
     if (view === 'mvp') {
       mainEl.style.display = 'none';
       mvpEl.classList.add('active');
+      srEl.classList.remove('active');
       renderMvpDashboard();
+    } else if (view === 'systemreview') {
+      mainEl.style.display = 'none';
+      mvpEl.classList.remove('active');
+      srEl.classList.add('active');
+      renderSystemReview();
     } else {
       mainEl.style.display = '';
       mvpEl.classList.remove('active');
+      srEl.classList.remove('active');
     }
   }
 
@@ -3450,6 +3461,184 @@ window.dismissOnboarding = function() {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(drawConnections, 150);
       });
+
+      /* ===============================================
+         -- SYSTEM REVIEW DASHBOARD --
+         =============================================== */
+      function renderSystemReview() {
+        var D = window.SYSTEM_REVIEW_DATA;
+        if (!D) { document.getElementById('sr-dashboard').innerHTML = '<p style="color:#8b949e;padding:40px">System review data not loaded.</p>'; return; }
+
+        var html = '';
+
+        /* ── Header with overall score ── */
+        var scoreColor = D.architectureVerdict.overallScore >= 70 ? '#3fb950' : D.architectureVerdict.overallScore >= 40 ? '#d29922' : '#f85149';
+        html += '<div class="sr-header">';
+        html += '<div class="sr-header-left">';
+        html += '<h2 class="sr-title">System Review</h2>';
+        html += '<p class="sr-subtitle">Senior Systems Design Assessment — Component by Component</p>';
+        html += '</div>';
+        html += '<div class="sr-score-ring" style="--score-color:' + scoreColor + '">';
+        html += '<div class="sr-score-value">' + D.architectureVerdict.overallScore + '</div>';
+        html += '<div class="sr-score-label">Overall<br>Readiness</div>';
+        html += '</div>';
+        html += '</div>';
+
+        /* ── Verdict banner ── */
+        html += '<div class="sr-verdict">';
+        html += '<div class="sr-verdict-headline">' + D.architectureVerdict.headline + '</div>';
+        html += '<p class="sr-verdict-text">' + D.architectureVerdict.summary + '</p>';
+        html += '<div class="sr-verdict-cols">';
+        html += '<div class="sr-verdict-col sr-strengths"><h4>Strengths</h4><ul>';
+        D.architectureVerdict.strengths.forEach(function(s) { html += '<li>' + s + '</li>'; });
+        html += '</ul></div>';
+        html += '<div class="sr-verdict-col sr-weaknesses"><h4>Weaknesses</h4><ul>';
+        D.architectureVerdict.weaknesses.forEach(function(w) { html += '<li>' + w + '</li>'; });
+        html += '</ul></div>';
+        html += '</div></div>';
+
+        /* ── Design Principles Legend ── */
+        html += '<div class="sr-principles">';
+        html += '<h3>Design Criteria</h3>';
+        html += '<div class="sr-principles-grid">';
+        D.principles.forEach(function(p) {
+          html += '<div class="sr-principle-chip">' + p.icon + ' <strong>' + p.label + '</strong><span class="sr-principle-q">' + p.question + '</span></div>';
+        });
+        html += '</div></div>';
+
+        /* ── Phased Roadmap ── */
+        html += '<div class="sr-roadmap">';
+        html += '<h3>MVP Roadmap — 6 Phases to One Alberta Quote</h3>';
+        D.phases.forEach(function(phase, idx) {
+          var statusClass = phase.status === 'complete' ? 'sr-phase-done' : phase.status === 'in_progress' ? 'sr-phase-active' : 'sr-phase-pending';
+          html += '<div class="sr-phase ' + statusClass + '" style="--phase-color:' + phase.color + '">';
+          html += '<div class="sr-phase-marker">' + phase.icon + '</div>';
+          html += '<div class="sr-phase-content">';
+          html += '<div class="sr-phase-head">';
+          html += '<span class="sr-phase-num">Phase ' + idx + '</span>';
+          html += '<h4>' + phase.title + '</h4>';
+          html += '<span class="sr-phase-effort">' + phase.effort + '</span>';
+          html += '</div>';
+          html += '<p class="sr-phase-subtitle">' + phase.subtitle + ' — ' + phase.description + '</p>';
+          html += '<div class="sr-phase-owner">Owner: ' + phase.owner + '</div>';
+          html += '<div class="sr-phase-items">';
+          phase.items.forEach(function(item) {
+            var check = item.status === 'complete' ? '&#9745;' : '&#9744;';
+            var cls = item.critical ? 'sr-item-critical' : 'sr-item-normal';
+            html += '<div class="sr-phase-item ' + cls + '">';
+            html += '<span class="sr-item-check">' + check + '</span>';
+            html += '<span>' + item.text + '</span>';
+            if (item.critical) html += '<span class="sr-item-badge">Critical</span>';
+            html += '</div>';
+          });
+          html += '</div></div></div>';
+          if (idx < D.phases.length - 1) html += '<div class="sr-phase-arrow">&#8595;</div>';
+        });
+        html += '</div>';
+
+        /* ── Component Reviews ── */
+        html += '<div class="sr-components">';
+        html += '<h3>Component-by-Component Assessment</h3>';
+        html += '<p class="sr-components-intro">Click any component to see its full senior engineer assessment.</p>';
+        html += '<div class="sr-component-grid">';
+
+        var compOrder = ['rpm_client','bff','quote_mgmt','service_bus','orchestrator','carrier_connector','schema_cache','cosmos_db','blob_storage','key_vault','apim','aviva','peace_hills','sgi'];
+        compOrder.forEach(function(cid) {
+          var c = D.componentReviews[cid];
+          if (!c) return;
+          var sc = c.score;
+          var sColor = sc >= 70 ? '#3fb950' : sc >= 40 ? '#d29922' : '#f85149';
+          var statusLabel = c.readiness === 'broken' ? 'BROKEN' : c.readiness === 'partial' ? 'PARTIAL' : c.readiness === 'not_started' ? 'NOT STARTED' : 'READY';
+          var statusCls = 'sr-status-' + c.readiness.replace('_','-');
+
+          html += '<div class="sr-comp-card" data-comp="' + cid + '" onclick="toggleCompDetail(\'' + cid + '\')">';
+          html += '<div class="sr-comp-head">';
+          html += '<div class="sr-comp-score" style="color:' + sColor + '">' + sc + '</div>';
+          html += '<div class="sr-comp-info"><div class="sr-comp-name">' + c.name + '</div>';
+          html += '<span class="sr-comp-status ' + statusCls + '">' + statusLabel + '</span></div>';
+          html += '</div>';
+
+          /* Criteria dots */
+          html += '<div class="sr-comp-criteria">';
+          c.criteria.forEach(function(cr) {
+            var p = D.principles.find(function(pp) { return pp.id === cr.principle; });
+            var dot = cr.status === 'pass' ? '&#9679;' : cr.status === 'warn' ? '&#9679;' : '&#9679;';
+            var dColor = cr.status === 'pass' ? '#3fb950' : cr.status === 'warn' ? '#d29922' : '#f85149';
+            html += '<span class="sr-criteria-dot" style="color:' + dColor + '" title="' + (p ? p.label : '') + ': ' + cr.note + '">' + dot + '</span>';
+          });
+          html += '</div>';
+
+          /* Issue count */
+          var critCount = c.keyIssues.filter(function(i) { return i.severity === 'critical'; }).length;
+          var warnCount = c.keyIssues.filter(function(i) { return i.severity === 'warning'; }).length;
+          html += '<div class="sr-comp-issues">';
+          if (critCount) html += '<span class="sr-issue-count sr-issue-crit">' + critCount + ' critical</span>';
+          if (warnCount) html += '<span class="sr-issue-count sr-issue-warn">' + warnCount + ' warning</span>';
+          if (!critCount && !warnCount) html += '<span class="sr-issue-count sr-issue-ok">No issues</span>';
+          html += '</div>';
+
+          /* Expandable detail */
+          html += '<div class="sr-comp-detail" id="sr-detail-' + cid + '">';
+          html += '<div class="sr-comp-role"><strong>Role:</strong> ' + c.role + '</div>';
+          html += '<div class="sr-comp-logic"><strong>Business Logic:</strong> ' + c.businessLogicLines + '</div>';
+          html += '<div class="sr-comp-verdict"><strong>Verdict:</strong> ' + c.verdict + '</div>';
+
+          /* Criteria table */
+          html += '<table class="sr-criteria-table"><thead><tr><th>Criteria</th><th>Status</th><th>Detail</th></tr></thead><tbody>';
+          c.criteria.forEach(function(cr) {
+            var p = D.principles.find(function(pp) { return pp.id === cr.principle; });
+            var statusIcon = cr.status === 'pass' ? '<span style="color:#3fb950">PASS</span>' : cr.status === 'warn' ? '<span style="color:#d29922">WARN</span>' : '<span style="color:#f85149">FAIL</span>';
+            html += '<tr><td>' + (p ? p.icon + ' ' + p.label : cr.principle) + '</td><td>' + statusIcon + '</td><td>' + cr.note + '</td></tr>';
+          });
+          html += '</tbody></table>';
+
+          /* Data stores */
+          if (c.dataStores.length) {
+            html += '<div class="sr-datastores"><h5>Data Stores</h5>';
+            c.dataStores.forEach(function(ds) {
+              html += '<div class="sr-ds-card">';
+              html += '<div class="sr-ds-name">' + ds.name + '</div>';
+              html += '<div class="sr-ds-purpose">' + ds.purpose + '</div>';
+              html += '<div class="sr-ds-fit"><strong>Is this the right choice?</strong> ' + ds.fit + '</div>';
+              html += '<div class="sr-ds-action"><strong>Action needed:</strong> ' + ds.action + '</div>';
+              html += '</div>';
+            });
+            html += '</div>';
+          }
+
+          /* Key issues */
+          html += '<div class="sr-key-issues"><h5>Key Issues</h5>';
+          c.keyIssues.forEach(function(ki) {
+            var sevCls = 'sr-ki-' + ki.severity;
+            html += '<div class="sr-ki ' + sevCls + '">';
+            html += '<span class="sr-ki-sev">' + ki.severity.toUpperCase() + '</span>';
+            html += '<strong>' + ki.issue + '</strong>';
+            html += '<p>' + ki.detail + '</p>';
+            html += '</div>';
+          });
+          html += '</div>';
+
+          html += '</div>'; /* end detail */
+          html += '</div>'; /* end card */
+        });
+
+        html += '</div></div>';
+
+        document.getElementById('sr-dashboard').innerHTML = html;
+      }
+
+      window.toggleCompDetail = function(cid) {
+        var el = document.getElementById('sr-detail-' + cid);
+        if (!el) return;
+        var card = el.closest('.sr-comp-card');
+        var isOpen = el.classList.contains('open');
+        /* Close all others */
+        document.querySelectorAll('.sr-comp-detail.open').forEach(function(d) { d.classList.remove('open'); d.closest('.sr-comp-card').classList.remove('sr-comp-expanded'); });
+        if (!isOpen) {
+          el.classList.add('open');
+          card.classList.add('sr-comp-expanded');
+        }
+      };
 
       /* URL hash routing - auto-open full view if hash matches */
       var hash = window.location.hash;

@@ -1,0 +1,533 @@
+/* ═══════════════════════════════════════════════════════════════
+   SYSTEM REVIEW DATA — Senior Systems Design Assessment
+   Generated from deep architecture review (2026-03-29)
+   ═══════════════════════════════════════════════════════════════ */
+
+window.SYSTEM_REVIEW_DATA = {
+
+  /* ── Design Principles (what a senior engineer evaluates) ── */
+  principles: [
+    { id: 'deployable', icon: '🚀', label: 'Deployable', question: 'Can this component be deployed independently via CI/CD?' },
+    { id: 'contract_aligned', icon: '🤝', label: 'Contract Aligned', question: 'Does it use shared contracts or have its own divergent copies?' },
+    { id: 'scalable', icon: '📈', label: 'Scalable', question: 'Can it handle 10x load without architectural changes?' },
+    { id: 'observable', icon: '🔍', label: 'Observable', question: 'Can you trace a request end-to-end and diagnose failures?' },
+    { id: 'resilient', icon: '🛡️', label: 'Resilient', question: 'Does it handle failures gracefully without losing data?' },
+    { id: 'secure', icon: '🔒', label: 'Secure', question: 'Are secrets managed properly? Is auth enforced?' },
+    { id: 'tested', icon: '✅', label: 'Tested', question: 'Are there integration tests that prove it works end-to-end?' },
+    { id: 'config_correct', icon: '⚙️', label: 'Config Correct', question: 'Are connection strings, queue names, and URLs correct?' }
+  ],
+
+  /* ── Phased Roadmap ─────────────────────────────────────── */
+  phases: [
+    {
+      id: 'phase_0',
+      title: 'Azure Access & Infrastructure',
+      subtitle: 'Get the keys to the building',
+      color: '#a371f7',
+      icon: '🔑',
+      status: 'not_started',
+      description: 'Before any code runs, we need Azure subscriptions with the right services provisioned and permissions granted.',
+      owner: 'Tariq → Deji (DevOps)',
+      effort: '1-2 days (plus approval wait time)',
+      items: [
+        { id: 'p0_1', text: 'Request sandbox Azure subscription with: Container Apps, Service Bus, Cosmos DB (MongoDB API), SQL Server, Key Vault, Blob Storage, APIM, App Insights', status: 'not_started', critical: true },
+        { id: 'p0_2', text: 'Request dev subscription (mirrors sandbox but team-accessible)', status: 'not_started', critical: true },
+        { id: 'p0_3', text: 'Request prod subscription (locked down, deployment-only access)', status: 'not_started', critical: false },
+        { id: 'p0_4', text: 'Ensure Azure AD app registration for RPM Client authentication', status: 'not_started', critical: true },
+        { id: 'p0_5', text: 'Provision Service Bus namespace: sbns-ratingplatform-{env}-001', status: 'not_started', critical: true },
+        { id: 'p0_6', text: 'Create Service Bus queues programmatically via Bicep: sbq-rating-requests, sbq-rating-jobs, sbq-rating-responses', status: 'not_started', critical: true },
+        { id: 'p0_7', text: 'Provision Cosmos DB account with MongoDB API for Quote Management', status: 'not_started', critical: true },
+        { id: 'p0_8', text: 'Provision SQL Server for ASP.NET Identity (RPM Client requirement)', status: 'not_started', critical: true },
+        { id: 'p0_9', text: 'Provision Key Vault for carrier OAuth2 credentials and connection strings', status: 'not_started', critical: false }
+      ]
+    },
+    {
+      id: 'phase_1',
+      title: 'Deployment Pipelines',
+      subtitle: 'Make code deployable',
+      color: '#4f8fff',
+      icon: '🏗️',
+      status: 'not_started',
+      description: 'Each service needs a CI/CD pipeline that builds a Docker image, pushes to Azure Container Registry, and deploys to Container Apps. Currently ZERO pipelines exist for Rating Platform services.',
+      owner: 'Tariq + DevOps',
+      effort: '2-3 days',
+      items: [
+        { id: 'p1_1', text: 'Create azure-pipelines.yml for QuoteManagement (build → ACR → Container App)', status: 'not_started', critical: true },
+        { id: 'p1_2', text: 'Create azure-pipelines.yml for RatingOrchestrator', status: 'not_started', critical: true },
+        { id: 'p1_3', text: 'Create azure-pipelines.yml for CarrierConnector', status: 'not_started', critical: true },
+        { id: 'p1_4', text: 'Create azure-pipelines.yml for SchemaCache', status: 'not_started', critical: false },
+        { id: 'p1_5', text: 'Create Bicep templates for Container App definitions (replicable dev → prod)', status: 'not_started', critical: true },
+        { id: 'p1_6', text: 'Verify Dockerfiles exist and build successfully for all services', status: 'not_started', critical: true },
+        { id: 'p1_7', text: 'Create Bicep template for Service Bus queues (programmatic, repeatable)', status: 'not_started', critical: true }
+      ]
+    },
+    {
+      id: 'phase_2',
+      title: 'Shared Contracts Package',
+      subtitle: 'Single source of truth',
+      color: '#3fb950',
+      icon: '📦',
+      status: 'not_started',
+      description: 'Create Rival.Rating.Contracts NuGet package with shared message types, CDM models, and queue name constants. This eliminates the 4 duplicate copies of CdmData and fixes all contract drift bugs.',
+      owner: 'Tariq',
+      effort: '2-3 days',
+      items: [
+        { id: 'p2_1', text: 'Create Rival.Rating.Contracts repo with CdmData, DynamicFieldValue (decimal, not double), CarrierContext, queue name constants', status: 'not_started', critical: true },
+        { id: 'p2_2', text: 'Define RatingRequestMessage, CarrierRatingMessage, RatingResponseMessage in shared package', status: 'not_started', critical: true },
+        { id: 'p2_3', text: 'Set up Azure DevOps Artifacts feed and publish v1.0.0', status: 'not_started', critical: true },
+        { id: 'p2_4', text: 'Update QuoteManagement: install package, delete local model copies, fix imports', status: 'not_started', critical: true },
+        { id: 'p2_5', text: 'Update RatingOrchestrator: install package, delete local model copies, fix imports', status: 'not_started', critical: true },
+        { id: 'p2_6', text: 'Update CarrierConnector: install package, delete local model copies, fix imports', status: 'not_started', critical: true },
+        { id: 'p2_7', text: 'Update BFF: install package, delete local model copies, fix imports', status: 'not_started', critical: false },
+        { id: 'p2_8', text: 'Run serialization round-trip tests to verify all services agree on JSON shape', status: 'not_started', critical: true }
+      ]
+    },
+    {
+      id: 'phase_3',
+      title: 'Component Readiness',
+      subtitle: 'Fix each block in the pipeline',
+      color: '#d29922',
+      icon: '🔧',
+      status: 'not_started',
+      description: 'Go component by component through the data flow. For each one: is it enterprise-ready? Fix configuration, connections, and logic issues.',
+      owner: 'Tariq + Team',
+      effort: '5-8 days',
+      items: [
+        { id: 'p3_1', text: 'BFF: Fix empty QuoteManagementApiUrl in appsettings.json', status: 'not_started', critical: true },
+        { id: 'p3_2', text: 'BFF: Fix thread-safety bug in SetApiKeyHeader (mutates shared DefaultRequestHeaders)', status: 'not_started', critical: true },
+        { id: 'p3_3', text: 'BFF: Enable Polly resilience policies (commented out in Program.cs)', status: 'not_started', critical: false },
+        { id: 'p3_4', text: 'QuoteManagement: Fix Service Bus namespace (sbns-rating-dev-001 → sbns-ratingplatform-dev-001)', status: 'not_started', critical: true },
+        { id: 'p3_5', text: 'QuoteManagement: Fix queue names to match shared constants', status: 'not_started', critical: true },
+        { id: 'p3_6', text: 'QuoteManagement: Register ServiceBusSettings in DI (IOptions not registered)', status: 'not_started', critical: true },
+        { id: 'p3_7', text: 'QuoteManagement: Create environment-specific appsettings (dev, qa, prod)', status: 'not_started', critical: true },
+        { id: 'p3_8', text: 'QuoteManagement: Fix CarrierTargets always null from frontend', status: 'not_started', critical: true },
+        { id: 'p3_9', text: 'RatingOrchestrator: Verify it receives messages after QuoteManagement fixes', status: 'not_started', critical: true },
+        { id: 'p3_10', text: 'CarrierConnector: Fix health check (hardcoded to always return Healthy)', status: 'not_started', critical: false },
+        { id: 'p3_11', text: 'RPM Client: Fix GetOffers polling (currently calls immediately, needs async wait)', status: 'not_started', critical: true },
+        { id: 'p3_12', text: 'SchemaCache: Verify bundles are seeded with Alberta PersAuto data', status: 'not_started', critical: true }
+      ]
+    },
+    {
+      id: 'phase_4',
+      title: 'CDM-to-CSIO Converter',
+      subtitle: 'The missing piece',
+      color: '#f85149',
+      icon: '🔄',
+      status: 'not_started',
+      description: 'Build the transformer that converts CDM fields into carrier-specific CSIO/ACORD XML. This is the critical gap — adapters are built but have nothing to send. Use VB.NET converter knowledge from czo-extractor as the reference for field mappings.',
+      owner: 'Tariq',
+      effort: '5-18 days (depends on CSIO package compatibility)',
+      items: [
+        { id: 'p4_1', text: 'Check if Rating.Csio.Packages.Data works with .NET 9 (1 hour, highest-leverage decision)', status: 'not_started', critical: true },
+        { id: 'p4_2', text: 'Build ICdmToCsioTransformer interface and Alberta PersAuto implementation', status: 'not_started', critical: true },
+        { id: 'p4_3', text: 'Map CDM fields → CSIO XML elements using czo-extractor Aviva data as reference', status: 'not_started', critical: true },
+        { id: 'p4_4', text: 'Add missing CDM fields for Alberta Auto (maritalStatus, occupation, bodyType, etc.)', status: 'not_started', critical: true },
+        { id: 'p4_5', text: 'Add broker identity fields to CDM (Producer/ContractNumber, PlacingOffice)', status: 'not_started', critical: true },
+        { id: 'p4_6', text: 'Build ICsioResponseParser to extract premiums from carrier response XML', status: 'not_started', critical: true },
+        { id: 'p4_7', text: 'Wire transformer into RatingService (replace PremiumCalculator simulator path)', status: 'not_started', critical: true },
+        { id: 'p4_8', text: 'Test with captured Aviva XML from test data folder as golden reference', status: 'not_started', critical: true }
+      ]
+    },
+    {
+      id: 'phase_5',
+      title: 'End-to-End Integration',
+      subtitle: 'One Alberta quote flowing through',
+      color: '#f778ba',
+      icon: '🎯',
+      status: 'not_started',
+      description: 'Connect everything. Submit a real Alberta auto quote from the RPM Client, watch it flow through every service, and get a real price back from a carrier.',
+      owner: 'Tariq + Team',
+      effort: '3-5 days',
+      items: [
+        { id: 'p5_1', text: 'Obtain carrier sandbox credentials (OAuth2 client_id/secret from Peace Hills or Aviva)', status: 'not_started', critical: true },
+        { id: 'p5_2', text: 'Configure IP whitelisting / NAT Gateway for carrier API access', status: 'not_started', critical: true },
+        { id: 'p5_3', text: 'Submit test quote from RPM Client → verify CDM arrives at BFF', status: 'not_started', critical: true },
+        { id: 'p5_4', text: 'Verify BFF forwards to QuoteManagement → quote stored in Cosmos DB', status: 'not_started', critical: true },
+        { id: 'p5_5', text: 'Verify QuoteManagement publishes to correct Service Bus queue', status: 'not_started', critical: true },
+        { id: 'p5_6', text: 'Verify Orchestrator receives, fans out per carrier, publishes to rating-jobs queue', status: 'not_started', critical: true },
+        { id: 'p5_7', text: 'Verify CarrierConnector converts CDM → CSIO XML → calls carrier API', status: 'not_started', critical: true },
+        { id: 'p5_8', text: 'Verify response flows back: CarrierConnector → response queue → QuoteManagement → RPM Client', status: 'not_started', critical: true },
+        { id: 'p5_9', text: 'Celebrate: broker sees real premium from a real carrier', status: 'not_started', critical: true }
+      ]
+    }
+  ],
+
+  /* ── Per-Component Senior Engineer Assessment ────────────── */
+  componentReviews: {
+    rpm_client: {
+      name: 'RPM Client',
+      readiness: 'partial',
+      score: 55,
+      role: 'Blazor frontend that brokers use to fill out quote forms and see results.',
+      businessLogicLines: 'Medium — dynamic form rendering from schema bundles, CDM creation from form values',
+      verdict: 'Functional but has integration gaps. Forms are schema-driven (good). CDM creation works. But async response polling is missing — it calls GetOffers immediately instead of waiting for carrier responses.',
+      criteria: [
+        { principle: 'deployable', status: 'pass', note: 'Has Dockerfile and can be containerized' },
+        { principle: 'contract_aligned', status: 'warn', note: 'Has its own copy of CdmData.cs — uses decimal (correct) but will drift' },
+        { principle: 'scalable', status: 'pass', note: 'Stateless Blazor Server — scales horizontally' },
+        { principle: 'observable', status: 'pass', note: 'App Insights integration present' },
+        { principle: 'resilient', status: 'warn', note: 'No retry on failed API calls to BFF' },
+        { principle: 'secure', status: 'fail', note: 'Azure AD auth required but not deferrable — needs app registration' },
+        { principle: 'tested', status: 'fail', note: 'No integration tests for quote submission flow' },
+        { principle: 'config_correct', status: 'warn', note: 'Requires SQL Server for ASP.NET Identity — must be provisioned' }
+      ],
+      dataStores: [
+        { name: 'SQL Server', purpose: 'ASP.NET Identity (user auth)', fit: 'Correct — Identity framework requires relational DB', action: 'Provision Azure SQL in sandbox' }
+      ],
+      keyIssues: [
+        { severity: 'critical', issue: 'CarrierTargets sent as null', detail: 'Frontend sends CarrierTargets = null in CreateQuoteRequest. No carriers get targeted. Quote goes nowhere.' },
+        { severity: 'critical', issue: 'No async polling for results', detail: 'Calls GetOffers immediately after submission. Carrier rating takes 5-15 seconds. Results are never seen.' },
+        { severity: 'warning', issue: 'CSIO mapping commented out', detail: 'Quote.razor.cs:704-707 has TODO comment for CSIO mapping — was never completed.' }
+      ]
+    },
+
+    bff: {
+      name: 'Web BFF',
+      readiness: 'broken',
+      score: 25,
+      role: 'API proxy that adds APIM authentication headers and forwards requests to backend services.',
+      businessLogicLines: '20 lines — just API key resolution from Key Vault. Everything else is HTTP forwarding.',
+      verdict: 'Pure proxy with two critical bugs. Could be replaced by YARP or APIM policies, but fixing it is faster than replacing it for MVP.',
+      criteria: [
+        { principle: 'deployable', status: 'warn', note: 'Has Dockerfile but no CI/CD pipeline for Rating Platform' },
+        { principle: 'contract_aligned', status: 'fail', note: 'Own copy of CdmData.cs and quote models — divergent from backend' },
+        { principle: 'scalable', status: 'pass', note: 'Stateless proxy — scales horizontally' },
+        { principle: 'observable', status: 'pass', note: 'App Insights configured' },
+        { principle: 'resilient', status: 'fail', note: 'Polly resilience policies are COMMENTED OUT in Program.cs line 19' },
+        { principle: 'secure', status: 'warn', note: 'API keys from Key Vault — correct pattern but Key Vault must be provisioned' },
+        { principle: 'tested', status: 'fail', note: 'No tests' },
+        { principle: 'config_correct', status: 'fail', note: 'QuoteManagementApiUrl is EMPTY in appsettings.json — all calls fail' }
+      ],
+      dataStores: [],
+      keyIssues: [
+        { severity: 'critical', issue: 'QuoteManagementApiUrl is empty', detail: 'appsettings.json has empty string for the backend URL. Every request to Quote Management returns an error.' },
+        { severity: 'critical', issue: 'Thread-safety bug in SetApiKeyHeader', detail: 'Mutates shared HttpClient.DefaultRequestHeaders from multiple threads. Race condition causes intermittent auth failures.' },
+        { severity: 'warning', issue: 'Polly policies commented out', detail: 'Retry, circuit breaker, and timeout policies exist in code but are commented out. No resilience on outbound calls.' }
+      ]
+    },
+
+    quote_mgmt: {
+      name: 'Quote Management',
+      readiness: 'broken',
+      score: 30,
+      role: 'Accepts quote creation/update requests, stores them in Cosmos DB, and publishes rating requests to Service Bus.',
+      businessLogicLines: '4 lines — generates IDs. Everything else is object assembly, persistence, and queue publishing.',
+      verdict: 'The critical link between frontend and rating pipeline. Currently broken due to wrong Service Bus namespace and queue names. Data model for Cosmos DB storage is reasonable. Fixing config issues makes it functional.',
+      criteria: [
+        { principle: 'deployable', status: 'fail', note: 'No CI/CD pipeline exists' },
+        { principle: 'contract_aligned', status: 'fail', note: 'Own copy of CdmData, RatingRequestMessage, RatingResponseMessage — decimal NumberValue (correct)' },
+        { principle: 'scalable', status: 'pass', note: 'Stateless API + Cosmos DB + Service Bus — inherently scalable' },
+        { principle: 'observable', status: 'pass', note: 'App Insights + structured logging present' },
+        { principle: 'resilient', status: 'warn', note: 'No retry on Service Bus publish failures' },
+        { principle: 'secure', status: 'warn', note: 'Managed Identity configured but not tested' },
+        { principle: 'tested', status: 'fail', note: 'No integration tests' },
+        { principle: 'config_correct', status: 'fail', note: 'Wrong Service Bus namespace AND wrong queue names' }
+      ],
+      dataStores: [
+        { name: 'Cosmos DB (MongoDB API)', purpose: 'Quote records (quoteWip collection) — stores CDM, status, carrier targets, pricing results', fit: 'Good fit — flexible schema handles varying CDM fields per carrier/province. MongoDB API is fine for document-oriented quote data.', action: 'Provision Cosmos DB with MongoDB API. Verify quoteWip collection schema supports the full quote lifecycle (created → submitted → rated → offers received).' },
+        { name: 'Service Bus', purpose: 'Publishes RatingRequestMessage to sbq-rating-requests queue', fit: 'Correct pattern — decouples quote submission from rating processing. Handles async carrier responses.', action: 'Fix namespace to sbns-ratingplatform-dev-001. Fix queue name to sbq-rating-requests (from shared constants).' }
+      ],
+      keyIssues: [
+        { severity: 'critical', issue: 'Wrong Service Bus namespace', detail: 'Configured as sbns-rating-dev-001 but should be sbns-ratingplatform-dev-001. Messages go to a non-existent namespace.' },
+        { severity: 'critical', issue: 'Wrong queue names', detail: 'Uses sbq-rating-requests-dev but Orchestrator listens on sbq-initial-rating-requests. Messages are never consumed.' },
+        { severity: 'critical', issue: 'ServiceBusSettings not registered in DI', detail: 'IOptions<ServiceBusSettings> is injected but never registered in Program.cs. Service crashes on startup.' },
+        { severity: 'warning', issue: 'No environment-specific config', detail: 'Only one appsettings.json with hardcoded dev values. No appsettings.Production.json.' }
+      ]
+    },
+
+    service_bus: {
+      name: 'Azure Service Bus',
+      readiness: 'not_started',
+      score: 0,
+      role: 'Message queue infrastructure. Three queues: sbq-rating-requests (QuoteManagement → Orchestrator), sbq-rating-jobs (Orchestrator → CarrierConnector), sbq-rating-responses (CarrierConnector → QuoteManagement).',
+      businessLogicLines: 'N/A — infrastructure service, no application code',
+      verdict: 'The right technology for this problem. Needs to be provisioned with correct queue names, and ideally created via Bicep so it is repeatable across environments.',
+      criteria: [
+        { principle: 'deployable', status: 'fail', note: 'Not provisioned yet — no Bicep template for Rating Platform queues' },
+        { principle: 'contract_aligned', status: 'fail', note: 'Queue names are hardcoded differently in each service' },
+        { principle: 'scalable', status: 'pass', note: 'Azure Service Bus scales to millions of messages/day' },
+        { principle: 'observable', status: 'warn', note: 'Basic monitoring available but no custom alerts configured' },
+        { principle: 'resilient', status: 'pass', note: 'Built-in dead-letter queues, message retry, and lock renewal' },
+        { principle: 'secure', status: 'warn', note: 'Needs Managed Identity RBAC roles (Data Sender, Data Receiver)' },
+        { principle: 'tested', status: 'fail', note: 'Cannot test until provisioned' },
+        { principle: 'config_correct', status: 'fail', note: 'Namespace and queue names do not match between services' }
+      ],
+      dataStores: [],
+      keyIssues: [
+        { severity: 'critical', issue: 'Not provisioned', detail: 'The Service Bus namespace sbns-ratingplatform-dev-001 does not exist yet. Must be created before any messages can flow.' },
+        { severity: 'critical', issue: 'Queue name disagreement', detail: 'QuoteManagement uses sbq-rating-requests-dev, Orchestrator uses sbq-initial-rating-requests. The shared contracts package will define the canonical names.' },
+        { severity: 'warning', issue: 'No Bicep template', detail: 'Queues should be created programmatically so dev/qa/prod environments are identical.' }
+      ]
+    },
+
+    orchestrator: {
+      name: 'Rating Orchestrator',
+      readiness: 'partial',
+      score: 60,
+      role: 'Receives one rating request with multiple carrier targets, fans out into separate per-carrier messages.',
+      businessLogicLines: '6 lines — a for-loop that iterates carrier targets and publishes a message per carrier.',
+      verdict: 'Architecturally functional. The fan-out logic is correct and simple. Main issue is the message contract mismatch — it sends "carrierTarget" but CarrierConnector expects "carrierContext". Will be fixed by shared contracts package.',
+      criteria: [
+        { principle: 'deployable', status: 'fail', note: 'No CI/CD pipeline exists' },
+        { principle: 'contract_aligned', status: 'fail', note: 'Own copies of CDM models. Uses double for NumberValue (wrong — should be decimal).' },
+        { principle: 'scalable', status: 'pass', note: 'Stateless worker service — scales by adding instances' },
+        { principle: 'observable', status: 'pass', note: 'OpenTelemetry tracing + App Insights configured' },
+        { principle: 'resilient', status: 'pass', note: 'Dead-letter handling, message abandonment on transient errors' },
+        { principle: 'secure', status: 'pass', note: 'Managed Identity for Service Bus access' },
+        { principle: 'tested', status: 'warn', note: 'Unit tests exist but no integration tests' },
+        { principle: 'config_correct', status: 'warn', note: 'Config is correct for its own queues but depends on upstream fixing theirs' }
+      ],
+      dataStores: [
+        { name: 'Blob Storage', purpose: 'Archives rating requests for audit trail', fit: 'Good fit — cheap, immutable storage for compliance/debugging.', action: 'Provision storage account. Best-effort write (non-blocking) is the right pattern.' }
+      ],
+      keyIssues: [
+        { severity: 'critical', issue: 'carrierTarget vs carrierContext property mismatch', detail: 'Sends CarrierRatingMessage with "carrierTarget" JSON property. CarrierConnector deserializes with "carrierContext". Result: carrier config is always null.' },
+        { severity: 'warning', issue: 'double NumberValue', detail: 'Uses double instead of decimal for DynamicFieldValue.NumberValue. Causes floating-point precision loss on currency amounts.' }
+      ]
+    },
+
+    carrier_connector: {
+      name: 'Carrier Connector',
+      readiness: 'partial',
+      score: 50,
+      role: 'The workhorse. Receives per-carrier rating messages, converts CDM to CSIO XML, calls carrier APIs, parses responses, publishes results.',
+      businessLogicLines: '130 lines of premium calculation (simulator). Carrier adapters are built but the CDM-to-CSIO converter is MISSING.',
+      verdict: 'The most valuable service in the system. Has real business logic (premium rules), carrier adapters (Aviva, PeaceHills, SGI) with OAuth2 auth, resilience policies, and blob storage archival. The critical missing piece is the CDM-to-CSIO transformer — adapters are ready but have no XML to send.',
+      criteria: [
+        { principle: 'deployable', status: 'fail', note: 'No CI/CD pipeline exists' },
+        { principle: 'contract_aligned', status: 'fail', note: 'Own copies of CDM models. Uses double for NumberValue (wrong).' },
+        { principle: 'scalable', status: 'pass', note: 'Stateless worker, concurrent message processing (10 concurrent), independent scaling' },
+        { principle: 'observable', status: 'pass', note: 'OpenTelemetry + custom metrics + Activity tracing per carrier call' },
+        { principle: 'resilient', status: 'pass', note: 'Polly retry (3x), circuit breaker (5 failures → 30s break), timeout (30s per request), dead-letter on permanent errors, abandon on transient' },
+        { principle: 'secure', status: 'pass', note: 'OAuth2 per carrier (Okta, Auth0, Azure AD), Managed Identity for Azure services' },
+        { principle: 'tested', status: 'warn', note: 'Has captured production XML test data but no automated integration tests' },
+        { principle: 'config_correct', status: 'warn', note: 'Service Bus config is correct. Carrier API URLs are placeholders (SET-IN-KEYVAULT).' }
+      ],
+      dataStores: [
+        { name: 'Blob Storage', purpose: 'Archives carrier response XML for audit trail and debugging', fit: 'Good fit — stores raw XML responses cheaply. Best-effort write pattern is correct.', action: 'Provision storage account with carrier-responses container.' }
+      ],
+      keyIssues: [
+        { severity: 'critical', issue: 'CDM-to-CSIO transformer does not exist', detail: 'The carrier adapters (Aviva, PeaceHills, SGI) are built and ready. They expect CSIO XML as input. But no code converts CDM fields into CSIO XML. This is the #1 gap in the entire system.' },
+        { severity: 'critical', issue: 'CSIO response parser does not exist', detail: 'Carrier APIs return CSIO XML with premiums embedded. No code extracts premiums from response XML.' },
+        { severity: 'warning', issue: 'Health check is fake', detail: 'RatingHealthCheck always returns Healthy regardless of Service Bus or Blob Storage connectivity.' },
+        { severity: 'warning', issue: 'Flat response structure', detail: 'Sends flat { carrierId, status, ratingResult } but QuoteManagement expects nested { carrierResult: { carrierId, status } }. Fixed by shared contracts.' }
+      ]
+    },
+
+    schema_cache: {
+      name: 'Schema Cache',
+      readiness: 'partial',
+      score: 45,
+      role: 'Stores and serves insurance product schema bundles (field definitions, form config, validation rules, code lists). Frontend queries it to build dynamic forms.',
+      businessLogicLines: '8 lines — two MongoDB queries. 629 lines of property-to-property mapping boilerplate.',
+      verdict: 'Works but is over-engineered. 637-line SchemaService.cs where 629 lines are field-by-field mapping. For MVP, the key question is: are Alberta PersAuto bundles seeded in the database? If not, the frontend renders an empty form.',
+      criteria: [
+        { principle: 'deployable', status: 'warn', note: 'Has Dockerfile but no Rating Platform CI/CD pipeline' },
+        { principle: 'contract_aligned', status: 'pass', note: 'Uses its own schema models — does not share Rating contracts (correct, different domain)' },
+        { principle: 'scalable', status: 'pass', note: 'Stateless API + MongoDB — scales horizontally' },
+        { principle: 'observable', status: 'pass', note: 'App Insights + health checks with MongoDB ping' },
+        { principle: 'resilient', status: 'pass', note: 'Polly retry policies on MongoDB operations' },
+        { principle: 'secure', status: 'warn', note: 'No auth middleware on public endpoints — any client can query schemas' },
+        { principle: 'tested', status: 'fail', note: 'No integration tests' },
+        { principle: 'config_correct', status: 'warn', note: 'MongoDB connection string is empty in appsettings.json — needs Key Vault reference' }
+      ],
+      dataStores: [
+        { name: 'MongoDB (Cosmos DB)', purpose: 'Stores schema bundles (schemaCache collection) and activation mappings (schemaMetadata collection)', fit: 'Reasonable fit — schema bundles are JSON documents with varying structure. MongoDB handles flexible schemas well.', action: 'Provision Cosmos DB. Seed with Alberta PersAuto bundle containing required fields for Aviva.' }
+      ],
+      keyIssues: [
+        { severity: 'critical', issue: 'Unknown if Alberta PersAuto bundle is seeded', detail: 'The form is schema-driven. If no bundle exists for carrierId=aviva, productCode=PersAuto, intent=quote, the frontend shows nothing.' },
+        { severity: 'warning', issue: 'Over-engineered mapping layer', detail: '629 lines of property-to-property mapping in SchemaService.cs. Adds no business value — just converts BSON to DTOs.' }
+      ]
+    },
+
+    cosmos_db: {
+      name: 'Cosmos DB (MongoDB API)',
+      readiness: 'not_started',
+      score: 10,
+      role: 'Document database for quote records and schema bundles. Uses MongoDB API compatibility layer so services use standard MongoDB drivers.',
+      businessLogicLines: 'N/A — infrastructure service',
+      verdict: 'Good technology choice for this use case. Quote data is document-shaped (varying fields per carrier/province), and Cosmos DB provides global distribution and automatic scaling. MongoDB API means standard drivers work without lock-in. Must be provisioned.',
+      criteria: [
+        { principle: 'deployable', status: 'fail', note: 'Not provisioned for Rating Platform' },
+        { principle: 'contract_aligned', status: 'pass', note: 'N/A — stores whatever services send it' },
+        { principle: 'scalable', status: 'pass', note: 'Cosmos DB auto-scales with provisioned throughput (RU/s)' },
+        { principle: 'observable', status: 'warn', note: 'Azure Monitor metrics available but no custom alerts' },
+        { principle: 'resilient', status: 'pass', note: 'Built-in replication, automatic failover, point-in-time backup' },
+        { principle: 'secure', status: 'warn', note: 'Needs Managed Identity access + network restrictions' },
+        { principle: 'tested', status: 'fail', note: 'Cannot test until provisioned' },
+        { principle: 'config_correct', status: 'fail', note: 'Connection strings are empty across all services' }
+      ],
+      dataStores: [],
+      keyIssues: [
+        { severity: 'critical', issue: 'Not provisioned', detail: 'Cosmos DB account for Rating Platform does not exist. Must be created with MongoDB API enabled.' },
+        { severity: 'warning', issue: 'RU/s budgeting needed', detail: 'Cosmos DB charges per request unit. Need to estimate throughput for quoting volume.' }
+      ]
+    },
+
+    blob_storage: {
+      name: 'Azure Blob Storage',
+      readiness: 'not_started',
+      score: 10,
+      role: 'Archives raw carrier request/response XML for audit trail and debugging.',
+      businessLogicLines: 'N/A — infrastructure service',
+      verdict: 'Simple, correct use of blob storage. Best-effort write pattern (non-blocking) means storage failures do not break the rating flow. Low priority for MVP but needed for production debugging.',
+      criteria: [
+        { principle: 'deployable', status: 'fail', note: 'Not provisioned' },
+        { principle: 'contract_aligned', status: 'pass', note: 'N/A' },
+        { principle: 'scalable', status: 'pass', note: 'Effectively unlimited' },
+        { principle: 'observable', status: 'pass', note: 'Azure Monitor + diagnostic logs available' },
+        { principle: 'resilient', status: 'pass', note: 'Built-in redundancy (LRS/GRS)' },
+        { principle: 'secure', status: 'warn', note: 'Needs Managed Identity access + private endpoint' },
+        { principle: 'tested', status: 'fail', note: 'Cannot test until provisioned' },
+        { principle: 'config_correct', status: 'warn', note: 'StorageAccount.AccountName is empty in CarrierConnector config' }
+      ],
+      dataStores: [],
+      keyIssues: [
+        { severity: 'warning', issue: 'Not provisioned', detail: 'Storage account for carrier responses needs creation. Low priority — system works without it.' }
+      ]
+    },
+
+    key_vault: {
+      name: 'Azure Key Vault',
+      readiness: 'not_started',
+      score: 10,
+      role: 'Stores secrets: carrier OAuth2 credentials, database connection strings, APIM keys.',
+      businessLogicLines: 'N/A — infrastructure service',
+      verdict: 'Essential for production. All carrier API credentials should come from Key Vault, not appsettings.json. For dev/sandbox, connection strings in config are acceptable temporarily.',
+      criteria: [
+        { principle: 'deployable', status: 'fail', note: 'Not provisioned for Rating Platform' },
+        { principle: 'contract_aligned', status: 'pass', note: 'N/A' },
+        { principle: 'scalable', status: 'pass', note: 'Azure managed service' },
+        { principle: 'observable', status: 'pass', note: 'Audit logging built-in' },
+        { principle: 'resilient', status: 'pass', note: 'Azure managed with SLA' },
+        { principle: 'secure', status: 'pass', note: 'Core purpose is security — RBAC-based access' },
+        { principle: 'tested', status: 'fail', note: 'Cannot test until provisioned' },
+        { principle: 'config_correct', status: 'warn', note: 'Services reference Key Vault but vault does not exist yet' }
+      ],
+      dataStores: [],
+      keyIssues: [
+        { severity: 'warning', issue: 'Not provisioned', detail: 'Key Vault needs creation. For sandbox, can use appsettings.json temporarily. For prod, must use Key Vault references.' }
+      ]
+    },
+
+    apim: {
+      name: 'API Management (APIM)',
+      readiness: 'not_started',
+      score: 5,
+      role: 'API gateway that sits in front of backend services. Handles rate limiting, authentication, request routing, and API key management.',
+      businessLogicLines: 'N/A — infrastructure service',
+      verdict: 'The BFF currently does what APIM should do (add auth headers, proxy requests). For MVP, the BFF can substitute. For production, APIM provides rate limiting, analytics, and developer portal that the BFF cannot.',
+      criteria: [
+        { principle: 'deployable', status: 'fail', note: 'Not provisioned for Rating Platform APIs' },
+        { principle: 'contract_aligned', status: 'pass', note: 'N/A' },
+        { principle: 'scalable', status: 'pass', note: 'Azure managed with auto-scaling tiers' },
+        { principle: 'observable', status: 'pass', note: 'Built-in analytics and logging' },
+        { principle: 'resilient', status: 'pass', note: 'Azure managed with SLA' },
+        { principle: 'secure', status: 'pass', note: 'OAuth validation, rate limiting, IP filtering' },
+        { principle: 'tested', status: 'fail', note: 'Not provisioned' },
+        { principle: 'config_correct', status: 'fail', note: 'No API definitions registered' }
+      ],
+      dataStores: [],
+      keyIssues: [
+        { severity: 'info', issue: 'Not needed for MVP', detail: 'BFF substitutes for APIM in MVP. APIM should be provisioned for production with proper API policies.' }
+      ]
+    },
+
+    aviva: {
+      name: 'Aviva (Carrier)',
+      readiness: 'partial',
+      score: 40,
+      role: 'External carrier API. REST endpoint via AWS API Gateway. Accepts CSIO XML, returns rated CSIO XML with premiums.',
+      businessLogicLines: 'AvivaAdapter: ~191 lines. Auth handler, XML transformation (adds schemaLocation), REST call, response parsing.',
+      verdict: 'Adapter is fully built. OAuth2 auth via Auth0 is implemented. Guidewire-specific XML transformation (schemaLocation attribute) is handled. Missing: CDM-to-CSIO converter to feed it XML, and sandbox credentials.',
+      criteria: [
+        { principle: 'deployable', status: 'pass', note: 'Adapter code is deployed as part of CarrierConnector' },
+        { principle: 'contract_aligned', status: 'pass', note: 'Accepts CsioRequest interface — will work once converter exists' },
+        { principle: 'scalable', status: 'warn', note: 'Subject to Aviva API rate limits — unknown what those are' },
+        { principle: 'observable', status: 'pass', note: 'Per-carrier Activity tracing, timing metrics, error categorization' },
+        { principle: 'resilient', status: 'pass', note: 'Polly retry (3x), circuit breaker (5 failures), 30s timeout' },
+        { principle: 'secure', status: 'warn', note: 'OAuth2 credentials are placeholders — need real sandbox creds from Aviva' },
+        { principle: 'tested', status: 'pass', note: 'Has captured production XML request/response as golden test data' },
+        { principle: 'config_correct', status: 'warn', note: 'API URL is configured but credentials need Key Vault' }
+      ],
+      dataStores: [],
+      keyIssues: [
+        { severity: 'critical', issue: 'No CDM-to-CSIO converter', detail: 'Adapter is ready but has no XML to send. The converter must be built first.' },
+        { severity: 'warning', issue: 'Need sandbox credentials', detail: 'OAuth2 client_id/secret must be obtained from Aviva. Typically 2-6 weeks lead time.' }
+      ]
+    },
+
+    peace_hills: {
+      name: 'Peace Hills (Carrier)',
+      readiness: 'partial',
+      score: 40,
+      role: 'External carrier API. REST endpoint via Guidewire Cloud. Accepts CSIO XML as text/plain, returns rated CSIO XML.',
+      businessLogicLines: 'PeaceHillsAdapter: ~126 lines. OAuth2 via Okta, REST call, response parsing.',
+      verdict: 'Adapter is built. Simpler than Aviva (no XML transformation needed — sends raw CSIO as text/plain). Good MVP candidate because Peace Hills is Alberta-based. Missing: CDM-to-CSIO converter and sandbox credentials.',
+      criteria: [
+        { principle: 'deployable', status: 'pass', note: 'Part of CarrierConnector' },
+        { principle: 'contract_aligned', status: 'pass', note: 'Accepts CsioRequest interface' },
+        { principle: 'scalable', status: 'warn', note: 'Subject to Peace Hills API rate limits' },
+        { principle: 'observable', status: 'pass', note: 'Per-carrier tracing and metrics' },
+        { principle: 'resilient', status: 'pass', note: 'Same Polly policies as other adapters' },
+        { principle: 'secure', status: 'warn', note: 'Okta OAuth2 credentials are placeholders' },
+        { principle: 'tested', status: 'warn', note: 'No captured test XML for Peace Hills auto' },
+        { principle: 'config_correct', status: 'warn', note: 'API URL configured, credentials need Key Vault' }
+      ],
+      dataStores: [],
+      keyIssues: [
+        { severity: 'critical', issue: 'No CDM-to-CSIO converter', detail: 'Same blocker as Aviva — adapter ready, no XML to feed it.' },
+        { severity: 'warning', issue: 'Need sandbox credentials', detail: 'Okta OAuth2 credentials must be obtained from Peace Hills.' },
+        { severity: 'info', issue: 'Zero proprietary Z-codes', detail: 'Peace Hills uses entirely generic CSIO codes (per czo-extractor). Simpler to implement than Aviva.' }
+      ]
+    },
+
+    sgi: {
+      name: 'SGI (Carrier)',
+      readiness: 'partial',
+      score: 35,
+      role: 'External carrier API. SOAP-over-REST via Azure AD. Accepts CSIO XML wrapped in SOAP envelope.',
+      businessLogicLines: 'SgiAdapter: ~125 lines + SgiSoapClient for SOAP wrapping.',
+      verdict: 'Adapter is built but SOAP adds complexity. Not recommended as first MVP carrier — use Peace Hills or Aviva first. Lower priority.',
+      criteria: [
+        { principle: 'deployable', status: 'pass', note: 'Part of CarrierConnector' },
+        { principle: 'contract_aligned', status: 'pass', note: 'Accepts CsioRequest interface' },
+        { principle: 'scalable', status: 'warn', note: 'Subject to SGI API rate limits' },
+        { principle: 'observable', status: 'pass', note: 'Per-carrier tracing' },
+        { principle: 'resilient', status: 'pass', note: 'Same Polly policies' },
+        { principle: 'secure', status: 'warn', note: 'Azure AD OAuth2 credentials are placeholders' },
+        { principle: 'tested', status: 'fail', note: 'No test data captured' },
+        { principle: 'config_correct', status: 'warn', note: 'SOAP endpoint configured, credentials need Key Vault' }
+      ],
+      dataStores: [],
+      keyIssues: [
+        { severity: 'critical', issue: 'No CDM-to-CSIO converter', detail: 'Same blocker as all carriers.' },
+        { severity: 'warning', issue: 'SOAP complexity', detail: 'Requires SOAP envelope wrapping. More complex than REST carriers. Lower MVP priority.' }
+      ]
+    }
+  },
+
+  /* ── Architecture Review Summary ─────────────────────────── */
+  architectureVerdict: {
+    overallScore: 35,
+    headline: 'Solid foundation, broken connections',
+    summary: 'The architecture pattern (queue-based async with carrier adapters) is correct for insurance quoting. The implementation has strong individual components — especially the Carrier Connector with its adapter pattern, resilience policies, and telemetry. However, the services cannot communicate due to contract drift (4 copies of CdmData, property name mismatches, response structure disagreements) and configuration mismatches (wrong Service Bus namespaces, empty URLs). The shared contracts package is the highest-leverage fix.',
+    strengths: [
+      'Queue-based async pattern is correct for slow carrier APIs',
+      'Carrier adapter pattern is well-designed (pluggable, per-carrier auth)',
+      'Resilience policies (Polly retry, circuit breaker, timeout) are production-grade',
+      'OpenTelemetry tracing allows end-to-end request tracking',
+      'CDM dynamic field strategy handles varying carrier requirements',
+      'Schema-driven forms enable adding carriers without code changes'
+    ],
+    weaknesses: [
+      'Contract drift: 4 copies of CdmData with decimal vs double mismatch',
+      'Property name mismatch: carrierTarget vs carrierContext breaks deserialization',
+      'Response structure mismatch: flat vs nested means prices never reach frontend',
+      'Zero CI/CD pipelines for Rating Platform services',
+      'CDM-to-CSIO converter does not exist (adapters have nothing to send)',
+      'Infrastructure not provisioned (Service Bus, Cosmos DB, Key Vault)',
+      'No shared contracts package — each service maintains its own copies'
+    ]
+  }
+};
