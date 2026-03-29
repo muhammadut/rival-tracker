@@ -155,6 +155,7 @@ if (isLocal || sessionStorage.getItem('archex-auth') === 'true') {
 </div>
 
 <script src="actionplan-data.js"></script>
+<script src="mvp-v2-data.js"></script>
 <script src="insights-data.js"></script>
 <script src="data.js"></script>
 <script>
@@ -2050,7 +2051,7 @@ window.dismissOnboarding = function() {
   }
 
   /* ===============================================
-     -- MVP PROGRESS DASHBOARD --
+     -- MVP PROGRESS DASHBOARD (v2 -- Bottom-Up) --
      =============================================== */
 
   function escHtml(str) {
@@ -2059,337 +2060,538 @@ window.dismissOnboarding = function() {
     return d.innerHTML;
   }
 
+  var mvpV2SelectedStep = null;
+
   function renderMvpDashboard() {
     var el = document.getElementById('mvp-dashboard');
     if (!el) return;
-    var AP = window.ACTION_PLAN_DATA;
-    if (!AP) { el.innerHTML = '<p style="color:#8b949e;padding:40px;text-align:center">No action plan data loaded.</p>'; return; }
+    var MV = window.MVP_V2_DATA;
+    if (!MV) { el.innerHTML = '<p style="color:#8b949e;padding:40px;text-align:center">No MVP v2 data loaded.</p>'; return; }
 
     var html = '';
 
-    /* Step-to-service mapping for the pipeline diagram */
-    var stepServiceMap = {
-      'rpm_client': [9],
-      'bff': [1, 2, 3],
-      'quote_mgmt': [4, 5, 6],
-      'orchestrator': [7],
-      'carrier_connector': [8],
-      'schema_cache': [10]
-    };
+    /* ── Inject scoped styles ── */
+    html += '<style>';
+    html += '.mv2-hero{background:linear-gradient(135deg,rgba(79,143,255,0.1),rgba(63,185,80,0.06));border:1px solid #30363d;border-radius:16px;padding:36px 40px;margin-bottom:28px;position:relative;overflow:hidden}';
+    html += '.mv2-hero::before{content:"";position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(79,143,255,0.08) 0%,transparent 70%);pointer-events:none}';
+    html += '.mv2-hero-title{font-size:28px;font-weight:700;color:#e6edf3;margin-bottom:6px}';
+    html += '.mv2-hero-approach{display:inline-flex;align-items:center;gap:6px;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(79,143,255,0.12);color:#4f8fff;margin-bottom:14px;letter-spacing:0.3px}';
+    html += '.mv2-hero-goal{font-size:14px;color:#c9d1d9;line-height:1.7;max-width:800px}';
 
-    /* Pipeline order (top to bottom) */
-    var pipelineOrder = [
-      { id: 'rpm_client', label: 'RPM Client' },
-      { id: 'bff', label: 'Web BFF' },
-      { id: 'quote_mgmt', label: 'Quote Management' },
-      { id: 'service_bus', label: 'Service Bus', isInfra: true },
-      { id: 'orchestrator', label: 'Rating Orchestrator' },
-      { id: 'carrier_connector', label: 'Carrier Connector' },
-      { id: 'schema_cache', label: 'Schema Cache' }
+    /* Prerequisites bar */
+    html += '.mv2-prereq-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}';
+    html += '.mv2-prereq{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:12px 16px;flex:1;min-width:160px;transition:border-color 0.2s}';
+    html += '.mv2-prereq:hover{border-color:#484f58}';
+    html += '.mv2-prereq-name{font-size:12px;font-weight:600;color:#e6edf3;margin-bottom:4px}';
+    html += '.mv2-prereq-resource{font-size:10px;color:#8b949e;font-family:"SF Mono",monospace;margin-bottom:6px;word-break:break-all}';
+    html += '.mv2-prereq-status{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px}';
+    html += '.mv2-prereq-status.provisioned{background:rgba(63,185,80,0.12);color:#3fb950}';
+    html += '.mv2-prereq-status.unverified{background:rgba(210,153,34,0.12);color:#d29922}';
+    html += '.mv2-prereq-status.missing-in-dev{background:rgba(248,81,73,0.12);color:#f85149}';
+
+    /* Main layout */
+    html += '.mv2-main{display:grid;grid-template-columns:340px 1fr;gap:28px;margin-bottom:32px}';
+    html += '@media(max-width:960px){.mv2-main{grid-template-columns:1fr}}';
+
+    /* Pipeline column */
+    html += '.mv2-pipeline{display:flex;flex-direction:column;align-items:center;gap:0}';
+    html += '.mv2-pipe-node{width:100%;cursor:pointer;transition:all 0.2s;position:relative}';
+    html += '.mv2-pipe-card{background:#161b22;border:2px solid #30363d;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;transition:all 0.25s}';
+    html += '.mv2-pipe-card:hover{border-color:#4f8fff;transform:translateX(4px)}';
+    html += '.mv2-pipe-card.active{border-color:#4f8fff;box-shadow:0 0 0 1px #4f8fff,0 4px 20px rgba(79,143,255,0.15)}';
+    html += '.mv2-pipe-card.state-red{border-left:4px solid #f85149}';
+    html += '.mv2-pipe-card.state-yellow{border-left:4px solid #d29922}';
+    html += '.mv2-pipe-card.state-green{border-left:4px solid #3fb950}';
+    html += '.mv2-pipe-card.state-blue{border-left:4px solid #4f8fff}';
+    html += '.mv2-pipe-card.infra{background:#0d1117;border-style:dashed;border-left-style:dashed}';
+    html += '.mv2-pipe-step{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}';
+    html += '.mv2-pipe-step.exec{background:rgba(79,143,255,0.15);color:#4f8fff;border:2px solid #4f8fff}';
+    html += '.mv2-pipe-info{flex:1;min-width:0}';
+    html += '.mv2-pipe-name{font-size:14px;font-weight:600;color:#e6edf3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
+    html += '.mv2-pipe-sub{font-size:11px;color:#8b949e;margin-top:2px;display:flex;align-items:center;gap:6px}';
+    html += '.mv2-pipe-azure{font-size:10px;color:#8b949e;font-family:"SF Mono",monospace;background:#0d1117;padding:1px 6px;border-radius:3px}';
+    html += '.mv2-pipe-problems{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0}';
+    html += '.mv2-pipe-problems.has-critical{background:rgba(248,81,73,0.12);color:#f85149}';
+    html += '.mv2-pipe-problems.no-critical{background:rgba(210,153,34,0.12);color:#d29922}';
+    html += '.mv2-pipe-problems.all-good{background:rgba(63,185,80,0.12);color:#3fb950}';
+
+    /* Pipeline arrows */
+    html += '.mv2-pipe-arrow{display:flex;flex-direction:column;align-items:center;height:28px;position:relative}';
+    html += '.mv2-pipe-arrow-line{width:2px;flex:1;background:#30363d}';
+    html += '.mv2-pipe-arrow-head{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #30363d}';
+    html += '.mv2-pipe-arrow.up .mv2-pipe-arrow-head{border-top:none;border-bottom:6px solid #30363d}';
+    html += '.mv2-pipe-arrow-labels{position:absolute;right:-8px;top:50%;transform:translate(100%,-50%);display:flex;gap:4px}';
+    html += '.mv2-pipe-arrow-label{font-size:9px;color:#484f58;padding:1px 6px;border-radius:3px;background:#0d1117;white-space:nowrap}';
+    html += '.mv2-pipe-arrow-label.down{color:#8b949e}';
+    html += '.mv2-pipe-arrow-label.up{color:#3fb950}';
+
+    /* Direction legend */
+    html += '.mv2-legend{display:flex;gap:16px;justify-content:center;margin-bottom:14px;font-size:11px;color:#8b949e}';
+    html += '.mv2-legend-item{display:flex;align-items:center;gap:5px}';
+
+    /* Detail panel */
+    html += '.mv2-detail{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:0;position:sticky;top:80px;max-height:calc(100vh - 120px);overflow-y:auto}';
+    html += '.mv2-detail-header{padding:24px 24px 16px;border-bottom:1px solid #21262d;position:sticky;top:0;background:#161b22;z-index:2;border-radius:14px 14px 0 0}';
+    html += '.mv2-detail-step-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}';
+    html += '.mv2-detail-step-num{width:40px;height:40px;border-radius:50%;background:rgba(79,143,255,0.15);border:2px solid #4f8fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#4f8fff;flex-shrink:0}';
+    html += '.mv2-detail-name{font-size:20px;font-weight:700;color:#e6edf3}';
+    html += '.mv2-detail-subtitle{font-size:13px;color:#8b949e;margin-top:2px}';
+    html += '.mv2-detail-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}';
+    html += '.mv2-detail-tag{font-size:11px;padding:3px 10px;border-radius:12px;font-weight:500}';
+    html += '.mv2-detail-body{padding:20px 24px 24px}';
+
+    /* Why section */
+    html += '.mv2-why{background:rgba(79,143,255,0.06);border:1px solid rgba(79,143,255,0.15);border-radius:10px;padding:14px 16px;margin-bottom:20px}';
+    html += '.mv2-why-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#4f8fff;margin-bottom:6px}';
+    html += '.mv2-why-text{font-size:13px;color:#c9d1d9;line-height:1.6}';
+
+    /* Problem cards */
+    html += '.mv2-problems-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#8b949e;margin-bottom:10px}';
+    html += '.mv2-problem{background:#0d1117;border:1px solid #21262d;border-radius:10px;padding:14px 16px;margin-bottom:8px;transition:border-color 0.2s}';
+    html += '.mv2-problem:hover{border-color:#30363d}';
+    html += '.mv2-problem-head{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}';
+    html += '.mv2-problem-sev{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:2px 8px;border-radius:4px;flex-shrink:0;margin-top:2px}';
+    html += '.mv2-problem-sev.critical{background:rgba(248,81,73,0.15);color:#f85149}';
+    html += '.mv2-problem-sev.high{background:rgba(210,153,34,0.15);color:#d29922}';
+    html += '.mv2-problem-sev.medium{background:rgba(79,143,255,0.15);color:#4f8fff}';
+    html += '.mv2-problem-sev.low{background:rgba(139,148,158,0.15);color:#8b949e}';
+    html += '.mv2-problem-title{font-size:13px;font-weight:600;color:#e6edf3;line-height:1.4}';
+    html += '.mv2-problem-desc{font-size:12px;color:#8b949e;line-height:1.5;margin-bottom:8px}';
+    html += '.mv2-problem-fix{font-size:12px;color:#c9d1d9;line-height:1.5;padding:8px 12px;background:rgba(63,185,80,0.04);border:1px solid rgba(63,185,80,0.15);border-radius:6px;margin-bottom:8px}';
+    html += '.mv2-problem-fix-label{font-size:10px;font-weight:600;text-transform:uppercase;color:#3fb950;margin-bottom:4px}';
+    html += '.mv2-problem-claude{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 10px;border-radius:12px;font-weight:500}';
+    html += '.mv2-problem-claude.yes{background:rgba(63,185,80,0.1);color:#3fb950}';
+    html += '.mv2-problem-claude.yes-with-review{background:rgba(210,153,34,0.1);color:#d29922}';
+    html += '.mv2-problem-claude.partially{background:rgba(79,143,255,0.1);color:#4f8fff}';
+    html += '.mv2-problem-claude.no{background:rgba(248,81,73,0.1);color:#f85149}';
+
+    /* Verification test */
+    html += '.mv2-verify{background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.15);border-radius:10px;padding:14px 16px;margin-top:20px}';
+    html += '.mv2-verify-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#3fb950;margin-bottom:6px}';
+    html += '.mv2-verify-text{font-size:12px;color:#c9d1d9;line-height:1.6}';
+
+    /* Deploy badge */
+    html += '.mv2-deploy{margin-top:12px;font-size:12px;color:#8b949e;display:flex;align-items:center;gap:6px}';
+    html += '.mv2-deploy-label{font-weight:600;color:#a371f7}';
+
+    /* Empty state */
+    html += '.mv2-detail-empty{text-align:center;padding:80px 24px}';
+    html += '.mv2-detail-empty-arrow{font-size:48px;opacity:0.15;margin-bottom:12px}';
+    html += '.mv2-detail-empty-text{font-size:15px;color:#8b949e;font-weight:500}';
+    html += '.mv2-detail-empty-hint{font-size:13px;color:#484f58;margin-top:8px}';
+
+    /* Decisions section */
+    html += '.mv2-decisions{margin-bottom:32px}';
+    html += '.mv2-decisions-title{font-size:18px;font-weight:700;color:#e6edf3;margin-bottom:14px}';
+    html += '.mv2-decisions-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}';
+    html += '.mv2-decision{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:18px 20px;transition:border-color 0.2s}';
+    html += '.mv2-decision:hover{border-color:#484f58}';
+    html += '.mv2-decision-q{font-size:14px;font-weight:600;color:#e6edf3;margin-bottom:10px;line-height:1.4}';
+    html += '.mv2-decision-options{margin-bottom:10px}';
+    html += '.mv2-decision-opt{font-size:12px;color:#8b949e;padding:4px 0;display:flex;align-items:flex-start;gap:6px}';
+    html += '.mv2-decision-opt::before{content:"";width:6px;height:6px;border-radius:50%;border:1.5px solid #484f58;flex-shrink:0;margin-top:4px}';
+    html += '.mv2-decision-rec{font-size:12px;color:#c9d1d9;padding:8px 12px;background:rgba(79,143,255,0.06);border:1px solid rgba(79,143,255,0.15);border-radius:6px;line-height:1.5}';
+    html += '.mv2-decision-rec-label{font-size:10px;font-weight:600;color:#4f8fff;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.3px}';
+    html += '.mv2-decision-status{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;margin-top:10px}';
+    html += '.mv2-decision-status.pending{background:rgba(210,153,34,0.12);color:#d29922}';
+    html += '.mv2-decision-status.decided{background:rgba(63,185,80,0.12);color:#3fb950}';
+    html += '.mv2-decision-status.needs-investigation{background:rgba(248,81,73,0.12);color:#f85149}';
+
+    /* Timeline */
+    html += '.mv2-timeline{margin-bottom:32px}';
+    html += '.mv2-timeline-title{font-size:18px;font-weight:700;color:#e6edf3;margin-bottom:14px}';
+    html += '.mv2-timeline-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}';
+    html += '@media(max-width:700px){.mv2-timeline-row{grid-template-columns:1fr}}';
+    html += '.mv2-tier{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:24px;position:relative;overflow:hidden}';
+    html += '.mv2-tier::before{content:"";position:absolute;top:0;left:0;right:0;height:3px}';
+    html += '.mv2-tier.tier1::before{background:linear-gradient(90deg,#4f8fff,#3fb950)}';
+    html += '.mv2-tier.tier2::before{background:linear-gradient(90deg,#d29922,#f85149)}';
+    html += '.mv2-tier-name{font-size:16px;font-weight:700;color:#e6edf3;margin-bottom:4px}';
+    html += '.mv2-tier-desc{font-size:13px;color:#8b949e;margin-bottom:16px;line-height:1.5}';
+    html += '.mv2-tier-stats{display:flex;gap:16px;margin-bottom:14px}';
+    html += '.mv2-tier-stat{text-align:center}';
+    html += '.mv2-tier-stat-val{font-size:22px;font-weight:700;color:#e6edf3}';
+    html += '.mv2-tier-stat-label{font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}';
+    html += '.mv2-tier-outcome{font-size:13px;color:#c9d1d9;padding:12px 14px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.12);border-radius:8px;line-height:1.5}';
+    html += '.mv2-tier-depends{font-size:12px;color:#d29922;margin-top:10px;padding:8px 12px;background:rgba(210,153,34,0.06);border:1px solid rgba(210,153,34,0.12);border-radius:6px}';
+
+    /* Section label */
+    html += '.mv2-section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#484f58;margin-bottom:10px}';
+    html += '</style>';
+
+    /* ========================================
+       HERO SECTION
+       ======================================== */
+    html += '<div class="mv2-hero">';
+    html += '<div class="mv2-hero-title">MVP Execution Plan</div>';
+    html += '<div class="mv2-hero-approach">BOTTOM-UP APPROACH</div>';
+    html += '<div class="mv2-hero-goal">' + escHtml(MV.goal) + '</div>';
+    html += '</div>';
+
+    /* ========================================
+       INFRASTRUCTURE PREREQUISITES
+       ======================================== */
+    html += '<div class="mv2-section-label">Phase 0 -- Infrastructure Prerequisites</div>';
+    html += '<div class="mv2-prereq-bar">';
+    MV.prerequisites.forEach(function(p) {
+      html += '<div class="mv2-prereq">';
+      html += '<div class="mv2-prereq-name">' + escHtml(p.name) + '</div>';
+      html += '<div class="mv2-prereq-resource">' + escHtml(p.resource) + '</div>';
+      html += '<div class="mv2-prereq-status ' + p.status + '">';
+      if (p.status === 'provisioned') html += '&#10003; ';
+      else if (p.status === 'unverified') html += '? ';
+      else html += '&#10005; ';
+      html += escHtml(p.status.replace(/-/g, ' '));
+      html += '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    /* ========================================
+       MAIN LAYOUT: Pipeline + Detail
+       ======================================== */
+    html += '<div class="mv2-main">';
+
+    /* -- LEFT: Pipeline diagram -- */
+    html += '<div>';
+    html += '<div class="mv2-section-label">Execution Order (Bottom-Up)</div>';
+
+    /* Legend */
+    html += '<div class="mv2-legend">';
+    html += '<div class="mv2-legend-item"><span style="color:#30363d">&#9660;</span> Data flows down</div>';
+    html += '<div class="mv2-legend-item"><span style="color:#4f8fff">&#9650;</span> Build from bottom up</div>';
+    html += '</div>';
+
+    html += '<div class="mv2-pipeline">';
+
+    /* Render pipeline in DATA FLOW order (top=Frontend, bottom=CarrierConnector)
+       but with step numbers showing EXECUTION order (bottom-up) */
+    var dataFlowOrder = [
+      MV.executionOrder[5], // Step 6: RPM Client
+      MV.executionOrder[4], // Step 5: BFF
+      MV.executionOrder[3], // Step 4: Quote Management
+      MV.executionOrder[2], // Step 3: Service Bus
+      MV.executionOrder[1], // Step 2: Orchestrator
+      MV.executionOrder[0]  // Step 1: Carrier Connector
     ];
 
-    /* "Why this matters" context for each step */
-    var whyItMatters = {
-      1: "Without a URL, the BFF silently drops every quote request. The broker clicks Submit and nothing happens -- no error, no feedback, just silence.",
-      2: "Under any concurrent load (two brokers submitting quotes at once), auth headers get corrupted mid-flight. One request steals another's credentials, causing random 401s that are nearly impossible to debug.",
-      3: "A single transient network blip between BFF and QuoteManagement kills the request permanently. With Polly enabled, it auto-retries and the broker never notices the hiccup.",
-      4: "QuoteManagement is shouting into an empty room. It sends messages to a Service Bus namespace that doesn't exist in your infrastructure. Zero messages reach the Orchestrator.",
-      5: "The app compiles fine but crashes at runtime the moment a broker submits a quote. The DI container can't find ServiceBusSettings, so RatingSubmissionService never gets created.",
-      6: "With only one appsettings.json, deploying to QA or prod means either manually editing the file each time or running with dev/mock settings in production.",
-      7: "This is your integration smoke test. If a message flows from QuoteManagement through the Orchestrator and fans out to carrier jobs, the backbone of your platform is working.",
-      8: "The health endpoint lies -- it always says 'Healthy' even when Service Bus is disconnected. Container Apps will keep routing traffic to a dead instance instead of restarting it.",
-      9: "Rating is async (returns 202 with a jobId), but the UI immediately fetches results. It's like checking your mailbox 1 second after sending a letter -- offers will always be empty.",
-      10: "Without schema bundles, RPM Client can't render quote forms for any carrier. The broker sees a blank page instead of fields for vehicle info, driver details, and coverage options."
-    };
+    var arrowLabels = [
+      { down: 'HTTP requests', up: 'HTML response' },
+      { down: 'Proxy + APIM key', up: 'JSON response' },
+      { down: 'Publish to queue', up: 'Read responses' },
+      { down: 'Consume messages', up: '' },
+      { down: 'Fan-out per carrier', up: 'Premium results' }
+    ];
 
-    /* Before/After examples for key steps */
-    var beforeAfter = {
-      1: {
-        before: '"QuoteManagementApiUrl": ""',
-        after: '"QuoteManagementApiUrl": "https://localhost:7124"'
-      },
-      2: {
-        before: 'client.DefaultRequestHeaders.Remove("Ocp-Apim...");\nclient.DefaultRequestHeaders.Add("Ocp-Apim...", key);',
-        after: 'var request = new HttpRequestMessage(method, url);\nrequest.Headers.Add("Ocp-Apim...", key);'
-      },
-      3: {
-        before: '// .AddResiliencePolicies()  <-- commented out',
-        after: '.AddResiliencePolicies()  // retry + circuit breaker active'
-      },
-      4: {
-        before: '"FullyQualifiedServiceBusNamespace": "sbns-rating-dev-001..."\n"RequestQueueName": "sbq-rating-requests-dev"',
-        after: '"FullyQualifiedServiceBusNamespace": "sbns-ratingplatform-dev-001..."\n"RequestQueueName": "sbq-initial-rating-requests"'
-      },
-      5: {
-        before: '// ServiceBusSettings is never registered\nbuilder.Services.Configure<AzServiceBusOptions>(...);',
-        after: 'builder.Services.Configure<ServiceBusSettings>(\n  builder.Configuration.GetSection("ServiceBusSettings"));'
-      },
-      8: {
-        before: 'var isHealthy = true; // hardcoded!',
-        after: 'var isHealthy = processor.IsProcessing\n  && await storageClient.PingAsync();'
-      },
-      9: {
-        before: 'await RateQuoteAsync(quoteId);\nvar offers = await GetOffersAsync(quoteId); // always empty!',
-        after: 'var jobId = await RateQuoteAsync(quoteId);\nawait PollUntilRated(jobId, timeout: 60s);\nvar offers = await GetOffersAsync(quoteId);'
-      }
-    };
+    dataFlowOrder.forEach(function(comp, idx) {
+      var stateColor = comp.state_color || 'blue';
+      var problemCount = (comp.problems || []).length;
+      var criticalCount = (comp.problems || []).filter(function(p) { return p.severity === 'critical'; }).length;
+      var problemClass = criticalCount > 0 ? 'has-critical' : (problemCount > 0 ? 'no-critical' : 'all-good');
 
-    /* -- Progress Header -- */
-    html += '<div class="mvp-progress-header">';
-    html += '<div class="mvp-title">MVP Critical Path</div>';
-    html += '<div class="mvp-subtitle">' + escHtml(AP.mvpGoal) + '</div>';
-    html += '<div class="mvp-progress-bar"><div class="mvp-progress-fill" style="width:0%;background:linear-gradient(90deg,#4f8fff,#3fb950)"></div></div>';
-    html += '<div class="mvp-progress-label">0 of 10 steps addressed &middot; ' + escHtml(AP.systemMvpSummary.estimatedComplexity) + '</div>';
-    html += '</div>';
+      html += '<div class="mv2-pipe-node" data-comp-id="' + comp.id + '">';
+      html += '<div class="mv2-pipe-card state-' + stateColor + (comp.is_infrastructure ? ' infra' : '') + '" data-comp-id="' + comp.id + '">';
 
-    /* -- Two-column diagram layout -- */
-    html += '<div class="mvp-diagram-layout">';
+      /* Step number */
+      html += '<div class="mv2-pipe-step exec">' + comp.step + '</div>';
 
-    /* LEFT COLUMN: Mini pipeline diagram */
-    html += '<div class="mvp-diagram-left">';
-    html += '<h2 style="font-size:16px;font-weight:600;color:#e6edf3;margin-bottom:16px">Architecture Pipeline &amp; Steps</h2>';
-    html += '<div class="mvp-pipeline-mini">';
+      /* Info */
+      html += '<div class="mv2-pipe-info">';
+      html += '<div class="mv2-pipe-name">' + escHtml(comp.name) + '</div>';
+      html += '<div class="mv2-pipe-sub">';
+      html += '<span class="mv2-pipe-azure">' + escHtml(comp.azure_resource.split('(')[0].trim()) + '</span>';
+      html += '<span>' + escHtml(comp.state_label || comp.current_state) + '</span>';
+      html += '</div>';
+      html += '</div>';
 
-    pipelineOrder.forEach(function(node, idx) {
-      var steps = stepServiceMap[node.id] || [];
+      /* Problem count */
+      html += '<div class="mv2-pipe-problems ' + problemClass + '">' + problemCount + '</div>';
 
-      html += '<div class="mvp-pipeline-node">';
+      html += '</div>'; /* .mv2-pipe-card */
+      html += '</div>'; /* .mv2-pipe-node */
 
-      /* The pipeline card */
-      var cardClass = 'mvp-pipeline-card';
-      if (node.isInfra) cardClass += ' mvp-pipeline-infra';
-      html += '<div class="' + cardClass + '">' + escHtml(node.label) + '</div>';
-
-      /* Step badges next to this node */
-      if (steps.length > 0) {
-        html += '<div class="mvp-step-badges">';
-        steps.forEach(function(stepNum) {
-          var step = AP.mvpCriticalPath[stepNum - 1];
-          if (!step) return;
-          var shortTitle = step.title.replace(/^Fix /, '').replace(/^Implement /, '').replace(/^Enable /, '').replace(/^Verify /, '').replace(/^Register /, '').replace(/^Create /, '').replace(/^Load /, '');
-          if (shortTitle.length > 28) shortTitle = shortTitle.substring(0, 26) + '...';
-          html += '<div class="mvp-step-badge ' + step.complexity + '" data-step="' + (stepNum - 1) + '" title="Step ' + stepNum + ': ' + escHtml(step.title) + '">';
-          html += '<span class="mvp-step-badge-num">' + stepNum + '</span>';
-          html += '<span class="mvp-step-badge-label">' + escHtml(shortTitle) + '</span>';
-          html += '</div>';
-        });
+      /* Arrow (not after last) */
+      if (idx < dataFlowOrder.length - 1) {
+        var al = arrowLabels[idx];
+        html += '<div class="mv2-pipe-arrow">';
+        html += '<div class="mv2-pipe-arrow-line"></div>';
+        html += '<div class="mv2-pipe-arrow-head"></div>';
+        html += '<div class="mv2-pipe-arrow-labels">';
+        html += '<span class="mv2-pipe-arrow-label down">' + escHtml(al.down) + '</span>';
+        if (al.up) html += '<span class="mv2-pipe-arrow-label up">' + escHtml(al.up) + '</span>';
+        html += '</div>';
         html += '</div>';
       }
-
-      html += '</div>';
-
-      /* Arrow between nodes (not after last) */
-      if (idx < pipelineOrder.length - 1) {
-        html += '<div class="mvp-pipeline-arrow-wrap"><div class="mvp-pipeline-arrow"></div></div>';
-      }
     });
 
-    html += '</div>'; /* .mvp-pipeline-mini */
-    html += '</div>'; /* .mvp-diagram-left */
+    html += '</div>'; /* .mv2-pipeline */
+    html += '</div>'; /* left column */
 
-    /* RIGHT COLUMN: Step detail panel */
-    html += '<div class="mvp-diagram-right">';
-    html += '<div class="mvp-step-detail" id="mvp-step-detail">';
-    html += '<div class="mvp-step-detail-empty">';
-    html += '<div style="font-size:40px;margin-bottom:12px;opacity:0.3">&#8592;</div>';
-    html += '<div style="font-size:15px;font-weight:500;color:#8b949e">Click a step badge on the pipeline to see details</div>';
-    html += '<div style="font-size:13px;color:#484f58;margin-top:8px">Each badge shows a critical path step mapped to the service it affects</div>';
+    /* -- RIGHT: Detail Panel -- */
+    html += '<div class="mv2-detail" id="mv2-detail">';
+    html += '<div class="mv2-detail-empty">';
+    html += '<div class="mv2-detail-empty-arrow">&#8592;</div>';
+    html += '<div class="mv2-detail-empty-text">Select a component from the pipeline</div>';
+    html += '<div class="mv2-detail-empty-hint">Click any service to see its problems, fixes, and deployment details</div>';
     html += '</div>';
     html += '</div>';
-    html += '</div>'; /* .mvp-diagram-right */
 
-    html += '</div>'; /* .mvp-diagram-layout */
+    html += '</div>'; /* .mv2-main */
 
-    /* -- Quick Wins -- */
-    html += '<div class="mvp-quick-wins">';
-    html += '<div class="mvp-quick-wins-title">Quick Wins</div>';
-    html += '<div style="font-size:12px;color:#8b949e;margin-bottom:12px">These can be done in under 15 minutes each</div>';
-    AP.systemMvpSummary.quickWins.forEach(function(qw) {
-      html += '<div class="mvp-quick-win-item"><span style="color:#3fb950;flex-shrink:0">&#10003;</span><span>' + escHtml(qw) + '</span></div>';
-    });
-    html += '</div>';
+    /* ========================================
+       PENDING DECISIONS
+       ======================================== */
+    html += '<div class="mv2-decisions">';
+    html += '<div class="mv2-decisions-title">Pending Decisions</div>';
+    html += '<div class="mv2-decisions-grid">';
 
-    /* -- Service Status Grid -- */
-    html += '<h2 style="font-size:18px;font-weight:600;color:#e6edf3;margin:24px 0 16px">Service Status</h2>';
-    html += '<div class="mvp-service-grid">';
-
-    var stateColors = {
-      'broken': { bg: 'rgba(248,81,73,.12)', color: '#f85149' },
-      'degraded': { bg: 'rgba(210,153,34,.12)', color: '#d29922' },
-      'functional': { bg: 'rgba(63,185,80,.12)', color: '#3fb950' },
-      'not-started': { bg: 'rgba(72,79,88,.2)', color: '#8b949e' }
-    };
-
-    var serviceLabels = {
-      'quote_mgmt': 'Quote Management',
-      'orchestrator': 'Rating Orchestrator',
-      'carrier_connector': 'Carrier Connector',
-      'schema_cache': 'Schema Cache',
-      'rpm_client': 'RPM Client',
-      'bff': 'Web BFF',
-      'manufacture': 'Manufactured Rating'
-    };
-
-    var serviceOwners = {
-      'quote_mgmt': 'Mehul Dumasia',
-      'orchestrator': 'Rating Platform team',
-      'carrier_connector': 'Rating Platform team',
-      'schema_cache': 'Architecture team',
-      'rpm_client': 'Platform team',
-      'bff': 'Platform team',
-      'manufacture': 'Tariq'
-    };
-
-    Object.keys(AP.services).forEach(function(svcId) {
-      var svc = AP.services[svcId];
-      var sc = stateColors[svc.currentState] || stateColors['not-started'];
-      var blockerCount = (svc.mvpBlockers || []).length;
-      html += '<div class="mvp-service-card" data-svc="' + svcId + '">';
-      html += '<div class="mvp-service-name">' + (serviceLabels[svcId] || svcId) + '</div>';
-      html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
-      html += '<span class="mvp-service-state" style="background:' + sc.bg + ';color:' + sc.color + '">' + svc.currentState + '</span>';
-      if (blockerCount > 0) {
-        html += '<span style="font-size:12px;color:#f85149">' + blockerCount + ' blocker' + (blockerCount > 1 ? 's' : '') + '</span>';
-      }
+    MV.decisions.forEach(function(dec) {
+      html += '<div class="mv2-decision">';
+      html += '<div class="mv2-decision-q">' + escHtml(dec.question) + '</div>';
+      html += '<div class="mv2-decision-options">';
+      dec.options.forEach(function(opt) {
+        html += '<div class="mv2-decision-opt">' + escHtml(opt) + '</div>';
+      });
       html += '</div>';
-      html += '<div style="font-size:12px;color:#8b949e">' + (serviceOwners[svcId] || '') + '</div>';
+      html += '<div class="mv2-decision-rec">';
+      html += '<div class="mv2-decision-rec-label">Recommendation</div>';
+      html += escHtml(dec.recommendation);
+      html += '</div>';
+      html += '<div class="mv2-decision-status ' + dec.status + '">';
+      if (dec.status === 'pending') html += '&#9679; ';
+      else if (dec.status === 'decided') html += '&#10003; ';
+      else html += '&#9888; ';
+      html += escHtml(dec.status.replace(/-/g, ' '));
+      html += '</div>';
       html += '</div>';
     });
 
+    html += '</div>'; /* .mv2-decisions-grid */
+    html += '</div>'; /* .mv2-decisions */
+
+    /* ========================================
+       TIMELINE
+       ======================================== */
+    html += '<div class="mv2-timeline">';
+    html += '<div class="mv2-timeline-title">Delivery Timeline</div>';
+    html += '<div class="mv2-timeline-row">';
+
+    /* Tier 1 */
+    var t1 = MV.timeline.tier1;
+    html += '<div class="mv2-tier tier1">';
+    html += '<div class="mv2-tier-name">' + escHtml(t1.name) + '</div>';
+    html += '<div class="mv2-tier-desc">' + escHtml(t1.description) + '</div>';
+    html += '<div class="mv2-tier-stats">';
+    html += '<div class="mv2-tier-stat"><div class="mv2-tier-stat-val">' + escHtml(t1.engineering_days) + '</div><div class="mv2-tier-stat-label">Eng Days</div></div>';
+    html += '<div class="mv2-tier-stat"><div class="mv2-tier-stat-val">' + escHtml(t1.calendar_weeks) + '</div><div class="mv2-tier-stat-label">Cal Weeks</div></div>';
+    html += '</div>';
+    html += '<div class="mv2-tier-outcome">' + escHtml(t1.what_you_get) + '</div>';
     html += '</div>';
 
+    /* Tier 2 */
+    var t2 = MV.timeline.tier2;
+    html += '<div class="mv2-tier tier2">';
+    html += '<div class="mv2-tier-name">' + escHtml(t2.name) + '</div>';
+    html += '<div class="mv2-tier-desc">' + escHtml(t2.description) + '</div>';
+    html += '<div class="mv2-tier-stats">';
+    html += '<div class="mv2-tier-stat"><div class="mv2-tier-stat-val">' + escHtml(t2.engineering_days) + '</div><div class="mv2-tier-stat-label">Eng Days</div></div>';
+    html += '<div class="mv2-tier-stat"><div class="mv2-tier-stat-val">' + escHtml(t2.calendar_weeks) + '</div><div class="mv2-tier-stat-label">Cal Weeks</div></div>';
+    html += '</div>';
+    html += '<div class="mv2-tier-outcome">' + escHtml(t2.what_you_get) + '</div>';
+    if (t2.depends_on) {
+      html += '<div class="mv2-tier-depends">Depends on: ' + escHtml(t2.depends_on) + '</div>';
+    }
+    html += '</div>';
+
+    html += '</div>'; /* .mv2-timeline-row */
+    html += '</div>'; /* .mv2-timeline */
+
+    /* ── Write to DOM ── */
     el.innerHTML = html;
 
-    /* -- Bind step badge clicks -- */
-    el.querySelectorAll('.mvp-step-badge').forEach(function(badge) {
-      badge.addEventListener('click', function() {
-        var idx = parseInt(badge.dataset.step, 10);
-        var step = AP.mvpCriticalPath[idx];
-        if (!step) return;
+    /* ── Bind pipeline node clicks ── */
+    el.querySelectorAll('.mv2-pipe-card').forEach(function(card) {
+      card.addEventListener('click', function() {
+        var compId = card.dataset.compId;
+        selectMvpComponent(compId, el, MV);
+      });
+    });
 
-        /* Mark active badge */
-        el.querySelectorAll('.mvp-step-badge').forEach(function(b) { b.classList.remove('active'); });
-        badge.classList.add('active');
+    /* Auto-select the first execution step (CarrierConnector) */
+    var firstCard = el.querySelector('.mv2-pipe-card[data-comp-id="carrier_connector"]');
+    if (firstCard) firstCard.click();
+  }
 
-        /* Build detail HTML */
-        var detailEl = document.getElementById('mvp-step-detail');
-        var complexityColor = step.complexity === 'small' ? '#3fb950' : step.complexity === 'medium' ? '#d29922' : '#f85149';
-        var d = '';
+  function selectMvpComponent(compId, rootEl, MV) {
+    /* Find the component */
+    var comp = null;
+    MV.executionOrder.forEach(function(c) { if (c.id === compId) comp = c; });
+    if (!comp) return;
 
-        d += '<div class="mvp-step-detail-header">';
-        d += '<div class="mvp-step-detail-num">' + step.order + '</div>';
-        d += '<div>';
-        d += '<div class="mvp-step-detail-title">' + escHtml(step.title) + '</div>';
-        d += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">';
-        d += '<span class="mvp-step-badge ' + step.complexity + '" style="cursor:default;font-size:12px">' + step.complexity + '</span>';
-        d += '<span style="font-size:12px;color:#8b949e;padding:3px 10px;background:rgba(139,148,158,0.1);border-radius:12px">' + escHtml(step.owner) + '</span>';
-        d += '</div></div></div>';
+    mvpV2SelectedStep = compId;
 
-        /* Description */
-        d += '<div class="mvp-step-detail-section">';
-        d += '<div class="mvp-step-detail-section-title">Description</div>';
-        d += '<div class="mvp-step-detail-section-body">' + escHtml(step.description) + '</div>';
+    /* Highlight active card */
+    rootEl.querySelectorAll('.mv2-pipe-card').forEach(function(c) { c.classList.remove('active'); });
+    var activeCard = rootEl.querySelector('.mv2-pipe-card[data-comp-id="' + compId + '"]');
+    if (activeCard) activeCard.classList.add('active');
+
+    /* Highlight the execution path */
+    highlightMvpPath(compId, rootEl, MV);
+
+    /* Build detail panel */
+    var detailEl = document.getElementById('mv2-detail');
+    var d = '';
+
+    /* Header */
+    d += '<div class="mv2-detail-header">';
+    d += '<div class="mv2-detail-step-row">';
+    d += '<div class="mv2-detail-step-num">' + comp.step + '</div>';
+    d += '<div>';
+    d += '<div class="mv2-detail-name">' + escHtml(comp.name) + '</div>';
+    d += '<div class="mv2-detail-subtitle">' + escHtml(comp.subtitle) + '</div>';
+    d += '</div>';
+    d += '</div>';
+    d += '<div class="mv2-detail-meta">';
+
+    /* State badge */
+    var stateColor = comp.state_color || 'blue';
+    var stateBgMap = { red: 'rgba(248,81,73,0.12)', yellow: 'rgba(210,153,34,0.12)', green: 'rgba(63,185,80,0.12)', blue: 'rgba(79,143,255,0.12)' };
+    var stateTextMap = { red: '#f85149', yellow: '#d29922', green: '#3fb950', blue: '#4f8fff' };
+    d += '<span class="mv2-detail-tag" style="background:' + (stateBgMap[stateColor] || stateBgMap.blue) + ';color:' + (stateTextMap[stateColor] || stateTextMap.blue) + '">' + escHtml(comp.state_label || comp.current_state) + '</span>';
+
+    /* Azure resource */
+    d += '<span class="mv2-detail-tag" style="background:rgba(163,113,247,0.1);color:#a371f7">' + escHtml(comp.azure_resource) + '</span>';
+
+    d += '</div>';
+    d += '</div>'; /* .mv2-detail-header */
+
+    /* Body */
+    d += '<div class="mv2-detail-body">';
+
+    /* Why this is at this position */
+    var whyText = comp.why_first || comp.why_next || '';
+    if (whyText) {
+      d += '<div class="mv2-why">';
+      d += '<div class="mv2-why-label">Why Step ' + comp.step + '?</div>';
+      d += '<div class="mv2-why-text">' + escHtml(whyText) + '</div>';
+      d += '</div>';
+    }
+
+    /* Azure resource name */
+    if (comp.azure_name) {
+      d += '<div style="margin-bottom:16px;font-size:12px;color:#8b949e">';
+      d += '<span style="font-weight:600;color:#a371f7">Azure Resource:</span> ';
+      d += '<code style="background:#0d1117;padding:2px 8px;border-radius:4px;font-family:\'SF Mono\',monospace;color:#c9d1d9">' + escHtml(comp.azure_name) + '</code>';
+      d += '</div>';
+    }
+
+    /* Problems */
+    if (comp.problems && comp.problems.length > 0) {
+      var critCount = comp.problems.filter(function(p) { return p.severity === 'critical'; }).length;
+      var highCount = comp.problems.filter(function(p) { return p.severity === 'high'; }).length;
+      var otherCount = comp.problems.length - critCount - highCount;
+
+      d += '<div class="mv2-problems-title">';
+      d += comp.problems.length + ' Problem' + (comp.problems.length > 1 ? 's' : '');
+      if (critCount > 0) d += ' <span style="color:#f85149">(' + critCount + ' critical)</span>';
+      d += '</div>';
+
+      comp.problems.forEach(function(prob) {
+        d += '<div class="mv2-problem">';
+
+        /* Head: severity + title */
+        d += '<div class="mv2-problem-head">';
+        d += '<span class="mv2-problem-sev ' + prob.severity + '">' + escHtml(prob.severity) + '</span>';
+        d += '<span class="mv2-problem-title">' + escHtml(prob.title) + '</span>';
         d += '</div>';
 
-        /* What to change */
-        if (step.whatToChange) {
-          d += '<div class="mvp-step-detail-section">';
-          d += '<div class="mvp-step-detail-section-title">What to Change</div>';
-          d += '<div class="mvp-step-detail-section-body mvp-step-detail-code">' + escHtml(step.whatToChange) + '</div>';
-          d += '</div>';
+        /* Description */
+        d += '<div class="mv2-problem-desc">' + escHtml(prob.description) + '</div>';
+
+        /* Fix */
+        d += '<div class="mv2-problem-fix">';
+        d += '<div class="mv2-problem-fix-label">Fix</div>';
+        d += escHtml(prob.fix);
+        d += '</div>';
+
+        /* Claude automation tag */
+        var claudeLabel = prob.claude_can_do;
+        var claudeClass = prob.claude_can_do;
+        if (claudeLabel === 'yes') claudeLabel = 'Claude can automate';
+        else if (claudeLabel === 'yes-with-review') claudeLabel = 'Claude + human review';
+        else if (claudeLabel === 'partially') claudeLabel = 'Partially automatable';
+        else if (claudeLabel === 'no') claudeLabel = 'Manual / requires access';
+
+        d += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+        d += '<span class="mv2-problem-claude ' + claudeClass + '">' + escHtml(claudeLabel) + '</span>';
+        if (prob.claude_detail) {
+          d += '<span style="font-size:11px;color:#8b949e">' + escHtml(prob.claude_detail) + '</span>';
         }
+        d += '</div>';
 
-        /* Why this matters */
-        var why = whyItMatters[step.order];
-        if (why) {
-          d += '<div class="mvp-step-detail-section mvp-why-matters">';
-          d += '<div class="mvp-step-detail-section-title">Why This Matters</div>';
-          d += '<div class="mvp-step-detail-section-body">' + escHtml(why) + '</div>';
-          d += '</div>';
-        }
-
-        /* Before / After */
-        var ba = beforeAfter[step.order];
-        if (ba) {
-          d += '<div class="mvp-step-detail-section">';
-          d += '<div class="mvp-step-detail-section-title">Before / After</div>';
-          d += '<div class="mvp-before-after">';
-          d += '<div class="mvp-ba-col mvp-ba-before"><div class="mvp-ba-label">Before</div><pre class="mvp-ba-code">' + escHtml(ba.before) + '</pre></div>';
-          d += '<div class="mvp-ba-col mvp-ba-after"><div class="mvp-ba-label">After</div><pre class="mvp-ba-code">' + escHtml(ba.after) + '</pre></div>';
-          d += '</div></div>';
-        }
-
-        /* Affected services */
-        if (step.affectedServices && step.affectedServices.length > 0) {
-          d += '<div class="mvp-step-detail-section">';
-          d += '<div class="mvp-step-detail-section-title">Affected Services</div>';
-          d += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
-          step.affectedServices.forEach(function(svc) {
-            d += '<span class="detail-tag mvp-svc-badge" data-svc="' + svc + '" style="cursor:pointer;border:1px solid #4f8fff;color:#4f8fff">' + svc.replace(/_/g, ' ') + '</span>';
-          });
-          d += '</div></div>';
-        }
-
-        /* Unblocks */
-        if (step.unblocks) {
-          d += '<div class="mvp-step-detail-section">';
-          d += '<div class="mvp-step-detail-section-title">Unblocks</div>';
-          d += '<div class="mvp-step-detail-section-body" style="color:#3fb950">' + escHtml(step.unblocks) + '</div>';
-          d += '</div>';
-        }
-
-        /* Copy ticket button */
-        d += '<button class="mvp-copy-ticket-detail" data-step="' + idx + '">Copy Ticket</button>';
-
-        detailEl.innerHTML = d;
-
-        /* Bind copy ticket in detail panel */
-        var copyBtn = detailEl.querySelector('.mvp-copy-ticket-detail');
-        if (copyBtn) {
-          copyBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var text = 'Title: ' + step.title + '\n\nDescription: ' + step.description + '\n\nWhat to change: ' + (step.whatToChange || '') + '\n\nComplexity: ' + step.complexity + '\nOwner: ' + step.owner + '\nAffected services: ' + (step.affectedServices || []).join(', ') + '\nUnblocks: ' + (step.unblocks || '');
-            navigator.clipboard.writeText(text).then(function() {
-              copyBtn.textContent = 'Copied!';
-              copyBtn.style.background = 'rgba(63,185,80,0.15)';
-              copyBtn.style.borderColor = '#3fb950';
-              copyBtn.style.color = '#3fb950';
-              setTimeout(function() {
-                copyBtn.textContent = 'Copy Ticket';
-                copyBtn.style.background = '';
-                copyBtn.style.borderColor = '';
-                copyBtn.style.color = '';
-              }, 2000);
-            });
-          });
-        }
-
-        /* Bind service badge clicks in detail panel */
-        detailEl.querySelectorAll('.mvp-svc-badge').forEach(function(svcBadge) {
-          svcBadge.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var svcId = svcBadge.dataset.svc;
-            if (nodeById(svcId)) {
-              showFullView(svcId);
-            }
-          });
-        });
+        d += '</div>'; /* .mv2-problem */
       });
+    }
+
+    /* Verification test */
+    if (comp.test_to_verify) {
+      d += '<div class="mv2-verify">';
+      d += '<div class="mv2-verify-label">Verification Test</div>';
+      d += '<div class="mv2-verify-text">' + escHtml(comp.test_to_verify) + '</div>';
+      d += '</div>';
+    }
+
+    /* Deploy target */
+    if (comp.deploy_to) {
+      d += '<div class="mv2-deploy">';
+      d += '<span class="mv2-deploy-label">Deploy to:</span>';
+      d += '<span>' + escHtml(comp.deploy_to) + '</span>';
+      d += '</div>';
+    }
+
+    d += '</div>'; /* .mv2-detail-body */
+
+    detailEl.innerHTML = d;
+    detailEl.scrollTop = 0;
+  }
+
+  function highlightMvpPath(compId, rootEl, MV) {
+    /* Find the step number of the selected component */
+    var selectedStep = null;
+    MV.executionOrder.forEach(function(c) { if (c.id === compId) selectedStep = c.step; });
+    if (selectedStep === null) return;
+
+    /* Data flow order maps: index in visual pipeline -> step number */
+    var dataFlowSteps = [6, 5, 4, 3, 2, 1]; /* RPM=6, BFF=5, QM=4, SB=3, Orch=2, CC=1 */
+
+    /* Find position in visual pipeline */
+    var selectedVisualIdx = -1;
+    dataFlowSteps.forEach(function(s, idx) { if (s === selectedStep) selectedVisualIdx = idx; });
+
+    /* Dim nodes above the selected one (they come AFTER in execution order) */
+    var allNodes = rootEl.querySelectorAll('.mv2-pipe-node');
+    allNodes.forEach(function(node, idx) {
+      var nodeCompId = node.querySelector('.mv2-pipe-card').dataset.compId;
+      if (idx < selectedVisualIdx) {
+        /* Above = later in execution order = dim slightly */
+        node.style.opacity = '0.45';
+      } else {
+        /* At or below = already built or currently building = full opacity */
+        node.style.opacity = '1';
+      }
     });
 
-    /* Bind service card clicks - open full view */
-    el.querySelectorAll('.mvp-service-card').forEach(function(card) {
-      card.addEventListener('click', function() {
-        var svcId = card.dataset.svc;
-        if (nodeById(svcId)) {
-          showFullView(svcId);
-        }
-      });
+    /* Highlight arrows in the path */
+    var allArrows = rootEl.querySelectorAll('.mv2-pipe-arrow');
+    allArrows.forEach(function(arrow, idx) {
+      if (idx >= selectedVisualIdx) {
+        arrow.querySelector('.mv2-pipe-arrow-line').style.background = '#4f8fff';
+        arrow.querySelector('.mv2-pipe-arrow-head').style.borderTopColor = '#4f8fff';
+      } else {
+        arrow.querySelector('.mv2-pipe-arrow-line').style.background = '#30363d';
+        arrow.querySelector('.mv2-pipe-arrow-head').style.borderTopColor = '#30363d';
+      }
     });
-
-    /* Auto-select step 1 on load */
-    var firstBadge = el.querySelector('.mvp-step-badge[data-step="0"]');
-    if (firstBadge) firstBadge.click();
   }
 
     /* -- Event Listeners ---------------------------- */
