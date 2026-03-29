@@ -1646,7 +1646,8 @@ window.dismissOnboarding = function() {
       mainEl.style.display = 'none';
       mvpEl.classList.remove('active');
       srEl.classList.add('active');
-      renderSystemReview();
+      if (typeof window._renderSystemReview === 'function') window._renderSystemReview();
+      else { srEl.innerHTML = '<p style="color:#f85149;padding:40px">renderSystemReview not found. Check console.</p>'; console.error('_renderSystemReview not on window'); }
     } else {
       mainEl.style.display = '';
       mvpEl.classList.remove('active');
@@ -3465,7 +3466,7 @@ window.dismissOnboarding = function() {
       /* ===============================================
          -- SYSTEM REVIEW DASHBOARD --
          =============================================== */
-      function renderSystemReview() {
+      window._renderSystemReview = function renderSystemReview() {
         var D = window.SYSTEM_REVIEW_DATA;
         if (!D) { document.getElementById('sr-dashboard').innerHTML = '<p style="color:#8b949e;padding:40px">System review data not loaded.</p>'; return; }
         try {
