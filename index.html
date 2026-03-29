@@ -2072,8 +2072,11 @@ window.dismissOnboarding = function() {
 
     try {
     var html = '';
+    var TD = window.TASK_DETAILS || {};
 
-    /* ── Header ── */
+    /* ═══════════════════════════════════════════
+       SECTION 1: ASSESSMENT
+       ═══════════════════════════════════════════ */
     var scoreColor = SR.architectureVerdict.overallScore >= 70 ? '#3fb950' : SR.architectureVerdict.overallScore >= 40 ? '#d29922' : '#f85149';
     html += '<div class="mvt-header">';
     html += '<div><h2 class="mvt-title">MVP Tracker</h2>';
@@ -2084,7 +2087,6 @@ window.dismissOnboarding = function() {
     html += '</div>';
     html += '</div>';
 
-    /* ── Verdict + Disclaimer ── */
     html += '<div class="sr-verdict">';
     html += '<div class="sr-verdict-headline">' + SR.architectureVerdict.headline + '</div>';
     html += '<p class="sr-verdict-text">' + SR.architectureVerdict.summary + '</p>';
@@ -2095,42 +2097,29 @@ window.dismissOnboarding = function() {
     html += '<div class="sr-verdict-col sr-weaknesses"><h4>Weaknesses</h4><ul>';
     SR.architectureVerdict.weaknesses.forEach(function(w) { html += '<li>' + w + '</li>'; });
     html += '</ul></div>';
-    html += '</div>';
-    html += '<div class="mvt-disclaimer" style="margin-top:16px">' + (SR.disclaimer || '') + '</div>';
-    html += '</div>';
-
-    /* ── Component Health Grid ── */
-    html += '<div class="mvt-section"><h3>Component Health</h3>';
-    html += '<div class="sr-component-grid">';
-    var compOrder = ['rpm_client','bff','quote_mgmt','service_bus','orchestrator','carrier_connector','schema_cache','cosmos_db','aviva','peace_hills'];
-    compOrder.forEach(function(cid) {
-      var c = SR.componentReviews[cid];
-      if (!c) return;
-      var sc = c.score;
-      var sColor = sc >= 70 ? '#3fb950' : sc >= 40 ? '#d29922' : '#f85149';
-      var statusLabel = c.readiness === 'broken' ? 'BROKEN' : c.readiness === 'partial' ? 'PARTIAL' : c.readiness === 'not_started' ? 'NOT STARTED' : 'READY';
-      var statusCls = 'sr-status-' + c.readiness.replace('_','-');
-      var critCount = c.keyIssues.filter(function(i) { return i.severity === 'critical'; }).length;
-      var warnCount = c.keyIssues.filter(function(i) { return i.severity === 'warning'; }).length;
-
-      html += '<div class="sr-comp-card">';
-      html += '<div class="sr-comp-head">';
-      html += '<div class="sr-comp-score" style="color:' + sColor + '">' + sc + '</div>';
-      html += '<div class="sr-comp-info"><div class="sr-comp-name">' + c.name + '</div>';
-      html += '<span class="sr-comp-status ' + statusCls + '">' + statusLabel + '</span></div>';
-      html += '</div>';
-      html += '<div class="sr-comp-issues">';
-      if (critCount) html += '<span class="sr-issue-count sr-issue-crit">' + critCount + ' critical</span>';
-      if (warnCount) html += '<span class="sr-issue-count sr-issue-warn">' + warnCount + ' warning</span>';
-      if (!critCount && !warnCount) html += '<span class="sr-issue-count sr-issue-ok">No issues</span>';
-      html += '</div>';
-      html += '</div>';
-    });
     html += '</div></div>';
 
-    /* ── Parallel Track Visual ── */
+    /* ═══════════════════════════════════════════
+       SECTION 2: METHODOLOGY
+       ═══════════════════════════════════════════ */
+    html += '<div class="mvt-section mvt-methodology">';
+    html += '<h3>How We Built This Plan</h3>';
+    html += '<p class="mvt-method-text">This MVP plan was built through a systematic bottom-up analysis of the Rating Platform codebase across 6 repositories. Every claimed issue was verified against the actual source code with file paths and line numbers. The analysis included:</p>';
+    html += '<div class="mvt-method-grid">';
+    html += '<div class="mvt-method-card"><div class="mvt-method-num">6</div><div class="mvt-method-label">Repos analyzed</div></div>';
+    html += '<div class="mvt-method-card"><div class="mvt-method-num">14</div><div class="mvt-method-label">Bugs investigated</div></div>';
+    html += '<div class="mvt-method-card"><div class="mvt-method-num">12</div><div class="mvt-method-label">Confirmed real</div></div>';
+    html += '<div class="mvt-method-card"><div class="mvt-method-num">2</div><div class="mvt-method-label">False claims removed</div></div>';
+    html += '</div>';
+    html += '<p class="mvt-method-text" style="margin-top:12px">Two claims from earlier analysis were disproven and removed: (1) decimal vs double type mismatch — both services use double, no mismatch exists; (2) ServiceBusSettings not registered in DI — it is registered under a different class name. Every remaining item in this plan has been verified against the current code.</p>';
+    html += '<div class="mvt-disclaimer">' + (SR.disclaimer || '') + '</div>';
+    html += '</div>';
+
+    /* ═══════════════════════════════════════════
+       SECTION 3: ROADMAP (Gantt + Dependencies)
+       ═══════════════════════════════════════════ */
     html += '<div class="mvt-section"><h3>Parallel Work Streams</h3>';
-    html += '<p class="mvt-note">These three tracks can run simultaneously. Integration requires all tracks complete.</p>';
+    html += '<p class="mvt-note">Three tracks can run simultaneously. Integration requires all tracks complete.</p>';
     html += '<div class="mvt-gantt">';
 
     /* Timeline header */
@@ -2206,9 +2195,11 @@ window.dismissOnboarding = function() {
     html += '</div></div>';
     html += '</div>'; /* end section */
 
-    /* ── Phase-by-Phase Checklist ── */
-    html += '<div class="mvt-section"><h3>Phase Checklist</h3>';
-    html += '<p class="mvt-note">Click any phase to expand its tasks. Critical items are marked.</p>';
+    /* ═══════════════════════════════════════════
+       SECTION 4: TASK SUMMARY (compact, with links)
+       ═══════════════════════════════════════════ */
+    html += '<div class="mvt-section"><h3>Task Overview</h3>';
+    html += '<p class="mvt-note">Each task links to its full details below.</p>';
 
     SR.phases.forEach(function(phase, idx) {
       var totalItems = phase.items.length;
@@ -2216,47 +2207,35 @@ window.dismissOnboarding = function() {
       var critItems = phase.items.filter(function(i) { return i.critical; }).length;
       var pct = totalItems > 0 ? Math.round(doneItems / totalItems * 100) : 0;
 
-      html += '<div class="mvt-phase-card">';
-      html += '<div class="mvt-phase-header" style="--phase-color:' + phase.color + '">';
+      html += '<div class="mvt-phase-summary" style="--phase-color:' + phase.color + '">';
+      html += '<div class="mvt-phase-header">';
       html += '<span class="mvt-phase-icon">' + phase.icon + '</span>';
       html += '<div class="mvt-phase-info">';
       html += '<div class="mvt-phase-title">Phase ' + idx + ': ' + phase.title + '</div>';
-      html += '<div class="mvt-phase-meta">' + phase.effort + ' &middot; ' + phase.owner + ' &middot; ' + doneItems + '/' + totalItems + ' done &middot; ' + critItems + ' critical</div>';
+      html += '<div class="mvt-phase-meta">' + phase.effort + ' &middot; ' + phase.owner + ' &middot; ' + critItems + ' critical</div>';
       html += '</div>';
       html += '<div class="mvt-phase-progress"><div class="mvt-phase-bar" style="width:' + pct + '%;background:' + phase.color + '"></div></div>';
       html += '</div>';
 
-      html += '<div class="mvt-phase-body open">';
-      html += '<p class="mvt-phase-desc">' + phase.description + '</p>';
-
-      var TD = window.TASK_DETAILS || {};
+      html += '<div class="mvt-summary-list">';
       phase.items.forEach(function(item) {
         var isDone = item.status === 'complete';
-        var isActive = item.status === 'in_progress';
-        var cls = isDone ? 'mvt-item-done' : isActive ? 'mvt-item-active' : 'mvt-item-pending';
         var check = isDone ? '&#9745;' : '&#9744;';
+        var checkColor = isDone ? '#3fb950' : '#484f58';
         var hasDetail = !!TD[item.id];
-        html += '<div class="mvt-item ' + cls + '">';
-        html += '<span class="mvt-item-check">' + check + '</span>';
-        html += '<span class="mvt-item-text">' + item.text + '</span>';
-        if (item.critical) html += '<span class="mvt-item-crit">CRITICAL</span>';
-        html += '</div>';
+        html += '<div class="mvt-summary-row">';
+        html += '<span style="color:' + checkColor + '">' + check + '</span> ';
         if (hasDetail) {
-          var d = TD[item.id];
-          html += '<div class="mvt-task-detail open">';
-          html += '<div class="mvt-td-section"><div class="mvt-td-label">What</div><div class="mvt-td-content">' + d.what + '</div></div>';
-          html += '<div class="mvt-td-section"><div class="mvt-td-label">Why It Matters</div><div class="mvt-td-content">' + d.why + '</div></div>';
-          html += '<div class="mvt-td-section"><div class="mvt-td-label">How To Do It</div><div class="mvt-td-content"><pre class="mvt-td-code">' + d.how + '</pre></div></div>';
-          html += '<div class="mvt-td-section"><div class="mvt-td-label">Concrete Example</div><div class="mvt-td-content"><pre class="mvt-td-code">' + d.example + '</pre></div></div>';
-          html += '<div class="mvt-td-section"><div class="mvt-td-label">Ties Into</div><div class="mvt-td-content">' + d.tilesInto + '</div></div>';
-          html += '</div>';
+          html += '<a class="mvt-summary-link" href="#detail-' + item.id + '">' + item.text + '</a>';
+        } else {
+          html += '<span class="mvt-summary-text">' + item.text + '</span>';
         }
+        if (item.critical) html += ' <span class="mvt-item-crit">CRITICAL</span>';
+        html += '</div>';
       });
-
       html += '</div></div>';
     });
-
-    html += '</div>'; /* end section */
+    html += '</div>';
 
     /* ── Data Flow Diagram ── */
     html += '<div class="mvt-section"><h3>Data Flow — What Needs Fixing Where</h3>';
@@ -2302,6 +2281,71 @@ window.dismissOnboarding = function() {
     html += '<div class="mvt-stat"><div class="mvt-stat-num">6</div><div class="mvt-stat-label">Phases</div></div>';
     html += '<div class="mvt-stat"><div class="mvt-stat-num">3</div><div class="mvt-stat-label">Parallel Tracks</div></div>';
     html += '</div>';
+
+    /* ═══════════════════════════════════════════
+       SECTION 5: DETAILED TASK BREAKDOWN
+       ═══════════════════════════════════════════ */
+    html += '<div class="mvt-section" id="mvt-details-section"><h3>Detailed Task Breakdown</h3>';
+    html += '<p class="mvt-note">Full details for every task. Each card includes what to do, why it matters, how to do it, and a concrete example.</p>';
+
+    SR.phases.forEach(function(phase, idx) {
+      html += '<div class="mvt-detail-phase" style="--phase-color:' + phase.color + '">';
+      html += '<h4 class="mvt-detail-phase-title">' + phase.icon + ' Phase ' + idx + ': ' + phase.title + '</h4>';
+
+      phase.items.forEach(function(item) {
+        var hasDetail = !!TD[item.id];
+        html += '<div class="mvt-detail-task" id="detail-' + item.id + '">';
+        html += '<div class="mvt-detail-task-header">';
+        html += '<span class="mvt-detail-task-id">' + item.id + '</span>';
+        html += '<span class="mvt-detail-task-name">' + item.text + '</span>';
+        if (item.critical) html += '<span class="mvt-item-crit">CRITICAL</span>';
+        html += '</div>';
+
+        if (hasDetail) {
+          var d = TD[item.id];
+          html += '<div class="mvt-td-section"><div class="mvt-td-label">What</div><div class="mvt-td-content">' + d.what + '</div></div>';
+          html += '<div class="mvt-td-section"><div class="mvt-td-label">Why It Matters</div><div class="mvt-td-content">' + d.why + '</div></div>';
+          html += '<div class="mvt-td-section"><div class="mvt-td-label">How To Do It</div><div class="mvt-td-content"><pre class="mvt-td-code">' + d.how + '</pre></div></div>';
+          html += '<div class="mvt-td-section"><div class="mvt-td-label">Concrete Example</div><div class="mvt-td-content"><pre class="mvt-td-code">' + d.example + '</pre></div></div>';
+          html += '<div class="mvt-td-section"><div class="mvt-td-label">Ties Into</div><div class="mvt-td-content">' + d.tilesInto + '</div></div>';
+        }
+        html += '</div>';
+      });
+
+      html += '</div>';
+    });
+    html += '</div>';
+
+    /* ═══════════════════════════════════════════
+       SECTION 6: COMPONENT HEALTH (reference)
+       ═══════════════════════════════════════════ */
+    html += '<div class="mvt-section"><h3>Component Health Reference</h3>';
+    html += '<p class="mvt-note">Current readiness score and issue count per component.</p>';
+    html += '<div class="sr-component-grid">';
+    var compOrder = ['rpm_client','bff','quote_mgmt','service_bus','orchestrator','carrier_connector','schema_cache','cosmos_db','aviva','peace_hills'];
+    compOrder.forEach(function(cid) {
+      var c = SR.componentReviews[cid];
+      if (!c) return;
+      var sc = c.score;
+      var sColor = sc >= 70 ? '#3fb950' : sc >= 40 ? '#d29922' : '#f85149';
+      var statusLabel = c.readiness === 'broken' ? 'BROKEN' : c.readiness === 'partial' ? 'PARTIAL' : c.readiness === 'not_started' ? 'NOT STARTED' : 'READY';
+      var statusCls = 'sr-status-' + c.readiness.replace('_','-');
+      var critCount = c.keyIssues.filter(function(i) { return i.severity === 'critical'; }).length;
+      var warnCount = c.keyIssues.filter(function(i) { return i.severity === 'warning'; }).length;
+      html += '<div class="sr-comp-card">';
+      html += '<div class="sr-comp-head">';
+      html += '<div class="sr-comp-score" style="color:' + sColor + '">' + sc + '</div>';
+      html += '<div class="sr-comp-info"><div class="sr-comp-name">' + c.name + '</div>';
+      html += '<span class="sr-comp-status ' + statusCls + '">' + statusLabel + '</span></div>';
+      html += '</div>';
+      html += '<div class="sr-comp-issues">';
+      if (critCount) html += '<span class="sr-issue-count sr-issue-crit">' + critCount + ' critical</span>';
+      if (warnCount) html += '<span class="sr-issue-count sr-issue-warn">' + warnCount + ' warning</span>';
+      if (!critCount && !warnCount) html += '<span class="sr-issue-count sr-issue-ok">No issues</span>';
+      html += '</div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
 
     el.innerHTML = html;
     } catch(e) {

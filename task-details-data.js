@@ -10,7 +10,7 @@ window.TASK_DETAILS = {
   p0_1: {
     what: 'Request a sandbox Azure subscription with all required services enabled.',
     why: 'Every service in the Rating Platform runs on Azure. Without a subscription, we cannot provision Service Bus (queues), Cosmos DB (database), SQL Server (auth), or Container Apps (hosting). Nothing can be deployed or tested.',
-    how: 'Go to Deji (DevOps) and request a new Azure subscription. Specify the exact services needed: Container Apps, Service Bus, Cosmos DB with MongoDB API, SQL Server, Key Vault, Blob Storage, API Management, Application Insights.',
+    how: 'Submit a request to DevOps for a new Azure subscription. Specify the exact services needed: Container Apps, Service Bus, Cosmos DB with MongoDB API, SQL Server, Key Vault, Blob Storage, API Management, Application Insights.',
     example: 'Required Azure services:\n- Azure Container Apps (hosting 4 microservices)\n- Azure Service Bus (3 message queues)\n- Azure Cosmos DB with MongoDB API (quote storage)\n- Azure SQL Server (ASP.NET Identity / user auth)\n- Azure Key Vault (secrets management)\n- Azure Blob Storage (response archival)\n- Application Insights (monitoring)\n\nResource group naming: rg-ratingplatform-sandbox-001',
     tilesInto: 'Everything. This is the foundation — Phases 1-5 all depend on Azure services existing.'
   },
