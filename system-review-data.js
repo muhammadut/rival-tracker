@@ -529,5 +529,49 @@ window.SYSTEM_REVIEW_DATA = {
       'Infrastructure not provisioned (Service Bus, Cosmos DB, Key Vault)',
       'No shared contracts package — each service maintains its own copies'
     ]
-  }
+  },
+
+  /* ── Parallel Tracks (what can run simultaneously) ────── */
+  tracks: [
+    {
+      id: 'track_infra',
+      label: 'Infrastructure',
+      color: '#a371f7',
+      phases: ['phase_0', 'phase_1'],
+      description: 'Azure provisioning and CI/CD pipelines'
+    },
+    {
+      id: 'track_contracts',
+      label: 'Contracts & Fixes',
+      color: '#3fb950',
+      phases: ['phase_2', 'phase_3'],
+      description: 'Shared package + component bug fixes'
+    },
+    {
+      id: 'track_converter',
+      label: 'CDM-to-CSIO',
+      color: '#f85149',
+      phases: ['phase_4'],
+      description: 'The missing converter — can start independently'
+    },
+    {
+      id: 'track_integration',
+      label: 'Integration',
+      color: '#f778ba',
+      phases: ['phase_5'],
+      description: 'End-to-end testing — needs all tracks complete'
+    }
+  ],
+  dependencies: [
+    { from: 'phase_0', to: 'phase_1', reason: 'Need Azure subscription before creating pipelines' },
+    { from: 'phase_2', to: 'phase_3', reason: 'Shared contracts must exist before services can reference them' },
+    { from: 'phase_1', to: 'phase_5', reason: 'Services must be deployable before integration testing' },
+    { from: 'phase_3', to: 'phase_5', reason: 'Component bugs must be fixed before end-to-end flow works' },
+    { from: 'phase_4', to: 'phase_5', reason: 'Converter must exist to get real carrier quotes' }
+  ],
+  parallelGroups: [
+    { label: 'Can run simultaneously', phases: [['phase_0','phase_1'], ['phase_2','phase_3'], ['phase_4']], note: 'Infrastructure, Contracts, and Converter work are independent — assign to different people or work streams' },
+    { label: 'Must wait', phases: [['phase_5']], note: 'Integration testing requires all three tracks to be complete' }
+  ],
+  disclaimer: 'This plan is subject to change as we validate infrastructure access and carrier API availability. Phase estimates assume dedicated engineering time.'
 };

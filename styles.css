@@ -1470,3 +1470,84 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
   .sr-component-grid { grid-template-columns:1fr; }
   .sr-phase { flex-direction:column; }
 }
+
+/* ═══════════════════════════════════════════════════
+   MVP TRACKER DASHBOARD
+   ═══════════════════════════════════════════════════ */
+.mvt-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; gap:24px; }
+.mvt-title { font-size:28px; font-weight:700; color:#e6edf3; margin:0; }
+.mvt-subtitle { color:#8b949e; font-size:14px; margin-top:4px; }
+.mvt-disclaimer { background:rgba(210,153,34,.08); border:1px solid rgba(210,153,34,.2); border-radius:8px; padding:10px 14px; font-size:12px; color:#d29922; max-width:350px; line-height:1.5; }
+.mvt-section { margin-bottom:32px; }
+.mvt-section h3 { color:#e6edf3; font-size:18px; margin:0 0 8px; }
+.mvt-note { color:#8b949e; font-size:13px; margin:0 0 16px; }
+
+/* Gantt Chart */
+.mvt-gantt { background:#161b22; border:1px solid #30363d; border-radius:12px; padding:20px; overflow-x:auto; }
+.mvt-gantt-header, .mvt-gantt-row { display:grid; grid-template-columns:180px repeat(5,1fr); gap:4px; align-items:center; min-height:40px; }
+.mvt-gantt-header { margin-bottom:8px; border-bottom:1px solid #21262d; padding-bottom:8px; }
+.mvt-gantt-week { font-size:11px; color:#8b949e; text-align:center; font-weight:600; }
+.mvt-gantt-label { font-size:13px; color:#e6edf3; font-weight:500; display:flex; align-items:center; gap:8px; }
+.mvt-track-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.mvt-gantt-cell { height:36px; }
+.mvt-gantt-bar { height:36px; border-radius:8px; background:rgba(255,255,255,.04); border:1px solid var(--bar-color); position:relative; overflow:hidden; display:flex; align-items:center; padding:0 12px; }
+.mvt-bar-fill { position:absolute; left:0; top:0; bottom:0; background:var(--bar-color); opacity:.15; transition:width .5s; }
+.mvt-bar-text { position:relative; font-size:12px; color:#e6edf3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mvt-bar-pct { color:var(--bar-color); font-weight:700; margin-left:6px; }
+.mvt-gantt-row { margin-bottom:4px; }
+
+/* Dependencies */
+.mvt-deps { margin-top:16px; }
+.mvt-deps h4 { color:#e6edf3; font-size:14px; margin:0 0 8px; }
+.mvt-deps-grid { display:flex; flex-direction:column; gap:6px; }
+.mvt-dep-item { display:flex; align-items:center; gap:8px; font-size:13px; flex-wrap:wrap; }
+.mvt-dep-from { background:rgba(79,143,255,.1); color:#4f8fff; padding:2px 8px; border-radius:4px; font-weight:500; }
+.mvt-dep-arrow { color:#484f58; }
+.mvt-dep-to { background:rgba(79,143,255,.1); color:#4f8fff; padding:2px 8px; border-radius:4px; font-weight:500; }
+.mvt-dep-reason { color:#8b949e; font-size:12px; }
+
+/* Phase Checklist */
+.mvt-phase-card { background:#161b22; border:1px solid #30363d; border-radius:10px; margin-bottom:8px; overflow:hidden; cursor:pointer; transition:border-color .2s; }
+.mvt-phase-card:hover { border-color:#484f58; }
+.mvt-phase-header { display:flex; align-items:center; gap:12px; padding:14px 16px; }
+.mvt-phase-icon { font-size:20px; flex-shrink:0; }
+.mvt-phase-info { flex:1; min-width:0; }
+.mvt-phase-title { font-size:14px; font-weight:600; color:#e6edf3; }
+.mvt-phase-meta { font-size:11px; color:#8b949e; margin-top:2px; }
+.mvt-phase-progress { width:80px; height:6px; background:#21262d; border-radius:3px; overflow:hidden; flex-shrink:0; }
+.mvt-phase-bar { height:100%; border-radius:3px; transition:width .5s; }
+.mvt-phase-chevron { color:#484f58; font-size:12px; flex-shrink:0; transition:transform .2s; }
+.mvt-phase-chevron.open { transform:rotate(90deg); }
+.mvt-phase-body { display:none; padding:0 16px 16px; border-top:1px solid #21262d; }
+.mvt-phase-body.open { display:block; padding-top:12px; }
+.mvt-phase-desc { font-size:13px; color:#8b949e; margin:0 0 12px; line-height:1.5; }
+.mvt-item { display:flex; align-items:flex-start; gap:8px; padding:5px 0; font-size:13px; }
+.mvt-item-check { flex-shrink:0; font-size:14px; }
+.mvt-item-pending .mvt-item-check { color:#484f58; }
+.mvt-item-done .mvt-item-check { color:#3fb950; }
+.mvt-item-active .mvt-item-check { color:#4f8fff; }
+.mvt-item-text { color:#c9d1d9; }
+.mvt-item-done .mvt-item-text { color:#8b949e; text-decoration:line-through; }
+.mvt-item-crit { font-size:10px; font-weight:700; background:rgba(248,81,73,.12); color:#f85149; padding:1px 6px; border-radius:4px; margin-left:auto; flex-shrink:0; }
+
+/* Data Flow Diagram */
+.mvt-flow { display:flex; align-items:stretch; gap:0; overflow-x:auto; padding:8px 0; }
+.mvt-flow-step { border:2px solid; border-radius:10px; padding:12px; min-width:130px; flex-shrink:0; }
+.mvt-flow-label { font-size:13px; font-weight:700; margin-bottom:2px; }
+.mvt-flow-sub { font-size:11px; color:#8b949e; margin-bottom:8px; }
+.mvt-flow-fixes { }
+.mvt-flow-fix { font-size:11px; color:#c9d1d9; margin-bottom:2px; }
+.mvt-flow-arrow { display:flex; align-items:center; font-size:20px; color:#30363d; padding:0 4px; flex-shrink:0; }
+
+/* Stats bar */
+.mvt-stats { display:flex; gap:12px; flex-wrap:wrap; }
+.mvt-stat { background:#161b22; border:1px solid #30363d; border-radius:10px; padding:16px 20px; flex:1; min-width:100px; text-align:center; }
+.mvt-stat-num { font-size:28px; font-weight:800; color:#e6edf3; }
+.mvt-stat-label { font-size:12px; color:#8b949e; margin-top:4px; }
+
+@media (max-width:768px) {
+  .mvt-header { flex-direction:column; }
+  .mvt-gantt-header, .mvt-gantt-row { grid-template-columns:120px repeat(5,80px); }
+  .mvt-flow { flex-direction:column; }
+  .mvt-flow-arrow { transform:rotate(90deg); align-self:center; }
+}

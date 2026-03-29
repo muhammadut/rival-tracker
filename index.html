@@ -81,8 +81,8 @@ if (isLocal || sessionStorage.getItem('archex-auth') === 'true') {
       <div class="tabs" id="view-tabs">
         <button class="tab active" data-view="architecture">Architecture</button>
         <button class="tab" data-view="dataflow">Data Flow</button>
-        <button class="tab" data-view="mvp">MVP Progress</button>
-        <button class="tab" data-view="systemreview">System Review</button>
+        <button class="tab" data-view="systemreview">MVP Assessment</button>
+        <button class="tab" data-view="mvp">MVP Tracker</button>
       </div>
       <button class="watch-flow-btn" id="watch-flow-btn">&#9654; Watch Quote Flow</button>
     </div>
@@ -2063,7 +2063,7 @@ window.dismissOnboarding = function() {
   }
 
   /* ===============================================
-     -- MVP PROGRESS DASHBOARD (v2 -- Bottom-Up) --
+     -- MVP TRACKER DASHBOARD (v3 -- Visual Roadmap) --
      =============================================== */
 
   function escHtml(str) {
@@ -2077,534 +2077,201 @@ window.dismissOnboarding = function() {
   function renderMvpDashboard() {
     var el = document.getElementById('mvp-dashboard');
     if (!el) return;
-    var MV = window.MVP_V2_DATA;
-    if (!MV) { el.innerHTML = '<p style="color:#8b949e;padding:40px;text-align:center">No MVP v2 data loaded.</p>'; return; }
+    var SR = window.SYSTEM_REVIEW_DATA;
+    if (!SR) { el.innerHTML = '<p style="color:#8b949e;padding:40px">System review data not loaded.</p>'; return; }
 
+    try {
     var html = '';
 
-    /* ── Inject scoped styles ── */
-    html += '<style>';
-    html += '.mv2-hero{background:linear-gradient(135deg,rgba(79,143,255,0.1),rgba(63,185,80,0.06));border:1px solid #30363d;border-radius:16px;padding:36px 40px;margin-bottom:28px;position:relative;overflow:hidden}';
-    html += '.mv2-hero::before{content:"";position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(79,143,255,0.08) 0%,transparent 70%);pointer-events:none}';
-    html += '.mv2-hero-title{font-size:28px;font-weight:700;color:#e6edf3;margin-bottom:6px}';
-    html += '.mv2-hero-approach{display:inline-flex;align-items:center;gap:6px;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(79,143,255,0.12);color:#4f8fff;margin-bottom:14px;letter-spacing:0.3px}';
-    html += '.mv2-hero-goal{font-size:14px;color:#c9d1d9;line-height:1.7;max-width:800px}';
-
-    /* Prerequisites bar */
-    html += '.mv2-prereq-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}';
-    html += '.mv2-prereq{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:12px 16px;flex:1;min-width:160px;transition:border-color 0.2s}';
-    html += '.mv2-prereq:hover{border-color:#484f58}';
-    html += '.mv2-prereq-name{font-size:12px;font-weight:600;color:#e6edf3;margin-bottom:4px}';
-    html += '.mv2-prereq-resource{font-size:10px;color:#8b949e;font-family:"SF Mono",monospace;margin-bottom:6px;word-break:break-all}';
-    html += '.mv2-prereq-status{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px}';
-    html += '.mv2-prereq-status.provisioned{background:rgba(63,185,80,0.12);color:#3fb950}';
-    html += '.mv2-prereq-status.unverified{background:rgba(210,153,34,0.12);color:#d29922}';
-    html += '.mv2-prereq-status.missing-in-dev{background:rgba(248,81,73,0.12);color:#f85149}';
-
-    /* Main layout */
-    html += '.mv2-main{display:grid;grid-template-columns:340px 1fr;gap:28px;margin-bottom:32px}';
-    html += '@media(max-width:960px){.mv2-main{grid-template-columns:1fr}}';
-
-    /* Pipeline column */
-    html += '.mv2-pipeline{display:flex;flex-direction:column;align-items:center;gap:0}';
-    html += '.mv2-pipe-node{width:100%;cursor:pointer;transition:all 0.2s;position:relative}';
-    html += '.mv2-pipe-card{background:#161b22;border:2px solid #30363d;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;transition:all 0.25s}';
-    html += '.mv2-pipe-card:hover{border-color:#4f8fff;transform:translateX(4px)}';
-    html += '.mv2-pipe-card.active{border-color:#4f8fff;box-shadow:0 0 0 1px #4f8fff,0 4px 20px rgba(79,143,255,0.15)}';
-    html += '.mv2-pipe-card.state-red{border-left:4px solid #f85149}';
-    html += '.mv2-pipe-card.state-yellow{border-left:4px solid #d29922}';
-    html += '.mv2-pipe-card.state-green{border-left:4px solid #3fb950}';
-    html += '.mv2-pipe-card.state-blue{border-left:4px solid #4f8fff}';
-    html += '.mv2-pipe-card.infra{background:#0d1117;border-style:dashed;border-left-style:dashed}';
-    html += '.mv2-pipe-step{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}';
-    html += '.mv2-pipe-step.exec{background:rgba(79,143,255,0.15);color:#4f8fff;border:2px solid #4f8fff}';
-    html += '.mv2-pipe-info{flex:1;min-width:0}';
-    html += '.mv2-pipe-name{font-size:14px;font-weight:600;color:#e6edf3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
-    html += '.mv2-pipe-sub{font-size:11px;color:#8b949e;margin-top:2px;display:flex;align-items:center;gap:6px}';
-    html += '.mv2-pipe-azure{font-size:10px;color:#8b949e;font-family:"SF Mono",monospace;background:#0d1117;padding:1px 6px;border-radius:3px}';
-    html += '.mv2-pipe-problems{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0}';
-    html += '.mv2-pipe-problems.has-critical{background:rgba(248,81,73,0.12);color:#f85149}';
-    html += '.mv2-pipe-problems.no-critical{background:rgba(210,153,34,0.12);color:#d29922}';
-    html += '.mv2-pipe-problems.all-good{background:rgba(63,185,80,0.12);color:#3fb950}';
-
-    /* Pipeline arrows */
-    html += '.mv2-pipe-arrow{display:flex;flex-direction:column;align-items:center;height:28px;position:relative}';
-    html += '.mv2-pipe-arrow-line{width:2px;flex:1;background:#30363d}';
-    html += '.mv2-pipe-arrow-head{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #30363d}';
-    html += '.mv2-pipe-arrow.up .mv2-pipe-arrow-head{border-top:none;border-bottom:6px solid #30363d}';
-    html += '.mv2-pipe-arrow-labels{position:absolute;right:-8px;top:50%;transform:translate(100%,-50%);display:flex;gap:4px}';
-    html += '.mv2-pipe-arrow-label{font-size:9px;color:#484f58;padding:1px 6px;border-radius:3px;background:#0d1117;white-space:nowrap}';
-    html += '.mv2-pipe-arrow-label.down{color:#8b949e}';
-    html += '.mv2-pipe-arrow-label.up{color:#3fb950}';
-
-    /* Direction legend */
-    html += '.mv2-legend{display:flex;gap:16px;justify-content:center;margin-bottom:14px;font-size:11px;color:#8b949e}';
-    html += '.mv2-legend-item{display:flex;align-items:center;gap:5px}';
-
-    /* Detail panel */
-    html += '.mv2-detail{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:0;position:sticky;top:80px;max-height:calc(100vh - 120px);overflow-y:auto}';
-    html += '.mv2-detail-header{padding:24px 24px 16px;border-bottom:1px solid #21262d;position:sticky;top:0;background:#161b22;z-index:2;border-radius:14px 14px 0 0}';
-    html += '.mv2-detail-step-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}';
-    html += '.mv2-detail-step-num{width:40px;height:40px;border-radius:50%;background:rgba(79,143,255,0.15);border:2px solid #4f8fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#4f8fff;flex-shrink:0}';
-    html += '.mv2-detail-name{font-size:20px;font-weight:700;color:#e6edf3}';
-    html += '.mv2-detail-subtitle{font-size:13px;color:#8b949e;margin-top:2px}';
-    html += '.mv2-detail-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}';
-    html += '.mv2-detail-tag{font-size:11px;padding:3px 10px;border-radius:12px;font-weight:500}';
-    html += '.mv2-detail-body{padding:20px 24px 24px}';
-
-    /* Why section */
-    html += '.mv2-why{background:rgba(79,143,255,0.06);border:1px solid rgba(79,143,255,0.15);border-radius:10px;padding:14px 16px;margin-bottom:20px}';
-    html += '.mv2-why-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#4f8fff;margin-bottom:6px}';
-    html += '.mv2-why-text{font-size:13px;color:#c9d1d9;line-height:1.6}';
-
-    /* Problem cards */
-    html += '.mv2-problems-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#8b949e;margin-bottom:10px}';
-    html += '.mv2-problem{background:#0d1117;border:1px solid #21262d;border-radius:10px;padding:14px 16px;margin-bottom:8px;transition:border-color 0.2s}';
-    html += '.mv2-problem:hover{border-color:#30363d}';
-    html += '.mv2-problem-head{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}';
-    html += '.mv2-problem-sev{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:2px 8px;border-radius:4px;flex-shrink:0;margin-top:2px}';
-    html += '.mv2-problem-sev.critical{background:rgba(248,81,73,0.15);color:#f85149}';
-    html += '.mv2-problem-sev.high{background:rgba(210,153,34,0.15);color:#d29922}';
-    html += '.mv2-problem-sev.medium{background:rgba(79,143,255,0.15);color:#4f8fff}';
-    html += '.mv2-problem-sev.low{background:rgba(139,148,158,0.15);color:#8b949e}';
-    html += '.mv2-problem-title{font-size:13px;font-weight:600;color:#e6edf3;line-height:1.4}';
-    html += '.mv2-problem-desc{font-size:12px;color:#8b949e;line-height:1.5;margin-bottom:8px}';
-    html += '.mv2-problem-fix{font-size:12px;color:#c9d1d9;line-height:1.5;padding:8px 12px;background:rgba(63,185,80,0.04);border:1px solid rgba(63,185,80,0.15);border-radius:6px;margin-bottom:8px}';
-    html += '.mv2-problem-fix-label{font-size:10px;font-weight:600;text-transform:uppercase;color:#3fb950;margin-bottom:4px}';
-    html += '.mv2-problem-claude{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 10px;border-radius:12px;font-weight:500}';
-    html += '.mv2-problem-claude.yes{background:rgba(63,185,80,0.1);color:#3fb950}';
-    html += '.mv2-problem-claude.yes-with-review{background:rgba(210,153,34,0.1);color:#d29922}';
-    html += '.mv2-problem-claude.partially{background:rgba(79,143,255,0.1);color:#4f8fff}';
-    html += '.mv2-problem-claude.no{background:rgba(248,81,73,0.1);color:#f85149}';
-
-    /* Verification test */
-    html += '.mv2-verify{background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.15);border-radius:10px;padding:14px 16px;margin-top:20px}';
-    html += '.mv2-verify-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#3fb950;margin-bottom:6px}';
-    html += '.mv2-verify-text{font-size:12px;color:#c9d1d9;line-height:1.6}';
-
-    /* Deploy badge */
-    html += '.mv2-deploy{margin-top:12px;font-size:12px;color:#8b949e;display:flex;align-items:center;gap:6px}';
-    html += '.mv2-deploy-label{font-weight:600;color:#a371f7}';
-
-    /* Empty state */
-    html += '.mv2-detail-empty{text-align:center;padding:80px 24px}';
-    html += '.mv2-detail-empty-arrow{font-size:48px;opacity:0.15;margin-bottom:12px}';
-    html += '.mv2-detail-empty-text{font-size:15px;color:#8b949e;font-weight:500}';
-    html += '.mv2-detail-empty-hint{font-size:13px;color:#484f58;margin-top:8px}';
-
-    /* Decisions section */
-    html += '.mv2-decisions{margin-bottom:32px}';
-    html += '.mv2-decisions-title{font-size:18px;font-weight:700;color:#e6edf3;margin-bottom:14px}';
-    html += '.mv2-decisions-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}';
-    html += '.mv2-decision{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:18px 20px;transition:border-color 0.2s}';
-    html += '.mv2-decision:hover{border-color:#484f58}';
-    html += '.mv2-decision-q{font-size:14px;font-weight:600;color:#e6edf3;margin-bottom:10px;line-height:1.4}';
-    html += '.mv2-decision-options{margin-bottom:10px}';
-    html += '.mv2-decision-opt{font-size:12px;color:#8b949e;padding:4px 0;display:flex;align-items:flex-start;gap:6px}';
-    html += '.mv2-decision-opt::before{content:"";width:6px;height:6px;border-radius:50%;border:1.5px solid #484f58;flex-shrink:0;margin-top:4px}';
-    html += '.mv2-decision-rec{font-size:12px;color:#c9d1d9;padding:8px 12px;background:rgba(79,143,255,0.06);border:1px solid rgba(79,143,255,0.15);border-radius:6px;line-height:1.5}';
-    html += '.mv2-decision-rec-label{font-size:10px;font-weight:600;color:#4f8fff;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.3px}';
-    html += '.mv2-decision-status{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;margin-top:10px}';
-    html += '.mv2-decision-status.pending{background:rgba(210,153,34,0.12);color:#d29922}';
-    html += '.mv2-decision-status.decided{background:rgba(63,185,80,0.12);color:#3fb950}';
-    html += '.mv2-decision-status.needs-investigation{background:rgba(248,81,73,0.12);color:#f85149}';
-
-    /* Timeline */
-    html += '.mv2-timeline{margin-bottom:32px}';
-    html += '.mv2-timeline-title{font-size:18px;font-weight:700;color:#e6edf3;margin-bottom:14px}';
-    html += '.mv2-timeline-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}';
-    html += '@media(max-width:700px){.mv2-timeline-row{grid-template-columns:1fr}}';
-    html += '.mv2-tier{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:24px;position:relative;overflow:hidden}';
-    html += '.mv2-tier::before{content:"";position:absolute;top:0;left:0;right:0;height:3px}';
-    html += '.mv2-tier.tier1::before{background:linear-gradient(90deg,#4f8fff,#3fb950)}';
-    html += '.mv2-tier.tier2::before{background:linear-gradient(90deg,#d29922,#f85149)}';
-    html += '.mv2-tier-name{font-size:16px;font-weight:700;color:#e6edf3;margin-bottom:4px}';
-    html += '.mv2-tier-desc{font-size:13px;color:#8b949e;margin-bottom:16px;line-height:1.5}';
-    html += '.mv2-tier-stats{display:flex;gap:16px;margin-bottom:14px}';
-    html += '.mv2-tier-stat{text-align:center}';
-    html += '.mv2-tier-stat-val{font-size:22px;font-weight:700;color:#e6edf3}';
-    html += '.mv2-tier-stat-label{font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}';
-    html += '.mv2-tier-outcome{font-size:13px;color:#c9d1d9;padding:12px 14px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.12);border-radius:8px;line-height:1.5}';
-    html += '.mv2-tier-depends{font-size:12px;color:#d29922;margin-top:10px;padding:8px 12px;background:rgba(210,153,34,0.06);border:1px solid rgba(210,153,34,0.12);border-radius:6px}';
-
-    /* Section label */
-    html += '.mv2-section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#484f58;margin-bottom:10px}';
-    html += '</style>';
-
-    /* ========================================
-       HERO SECTION
-       ======================================== */
-    html += '<div class="mv2-hero">';
-    html += '<div class="mv2-hero-title">MVP Execution Plan</div>';
-    html += '<div class="mv2-hero-approach">BOTTOM-UP APPROACH</div>';
-    html += '<div class="mv2-hero-goal">' + escHtml(MV.goal) + '</div>';
+    /* ── Header ── */
+    html += '<div class="mvt-header">';
+    html += '<div><h2 class="mvt-title">MVP Tracker</h2>';
+    html += '<p class="mvt-subtitle">Alberta Auto Quote — End-to-End Roadmap</p></div>';
+    html += '<div class="mvt-disclaimer">' + (SR.disclaimer || '') + '</div>';
     html += '</div>';
 
-    /* ========================================
-       INFRASTRUCTURE PREREQUISITES
-       ======================================== */
-    html += '<div class="mv2-section-label">Phase 0 -- Infrastructure Prerequisites</div>';
-    html += '<div class="mv2-prereq-bar">';
-    MV.prerequisites.forEach(function(p) {
-      html += '<div class="mv2-prereq">';
-      html += '<div class="mv2-prereq-name">' + escHtml(p.name) + '</div>';
-      html += '<div class="mv2-prereq-resource">' + escHtml(p.resource) + '</div>';
-      html += '<div class="mv2-prereq-status ' + p.status + '">';
-      if (p.status === 'provisioned') html += '&#10003; ';
-      else if (p.status === 'unverified') html += '? ';
-      else html += '&#10005; ';
-      html += escHtml(p.status.replace(/-/g, ' '));
-      html += '</div>';
-      html += '</div>';
-    });
+    /* ── Parallel Track Visual ── */
+    html += '<div class="mvt-section"><h3>Parallel Work Streams</h3>';
+    html += '<p class="mvt-note">These three tracks can run simultaneously. Integration requires all tracks complete.</p>';
+    html += '<div class="mvt-gantt">';
+
+    /* Timeline header */
+    var weekLabels = ['Week 1-2', 'Week 2-3', 'Week 3-4', 'Week 4-6', 'Week 6-8'];
+    html += '<div class="mvt-gantt-header"><div class="mvt-gantt-label"></div>';
+    weekLabels.forEach(function(w) { html += '<div class="mvt-gantt-week">' + w + '</div>'; });
     html += '</div>';
 
-    /* ========================================
-       MAIN LAYOUT: Pipeline + Detail
-       ======================================== */
-    html += '<div class="mv2-main">';
-
-    /* -- LEFT: Pipeline diagram -- */
-    html += '<div>';
-    html += '<div class="mv2-section-label">Execution Order (Bottom-Up)</div>';
-
-    /* Legend */
-    html += '<div class="mv2-legend">';
-    html += '<div class="mv2-legend-item"><span style="color:#30363d">&#9660;</span> Data flows down</div>';
-    html += '<div class="mv2-legend-item"><span style="color:#4f8fff">&#9650;</span> Build from bottom up</div>';
-    html += '</div>';
-
-    html += '<div class="mv2-pipeline">';
-
-    /* Render pipeline in DATA FLOW order (top=Frontend, bottom=CarrierConnector)
-       but with step numbers showing EXECUTION order (bottom-up) */
-    var dataFlowOrder = [
-      MV.executionOrder[5], // Step 6: RPM Client
-      MV.executionOrder[4], // Step 5: BFF
-      MV.executionOrder[3], // Step 4: Quote Management
-      MV.executionOrder[2], // Step 3: Service Bus
-      MV.executionOrder[1], // Step 2: Orchestrator
-      MV.executionOrder[0]  // Step 1: Carrier Connector
+    /* Track rows */
+    var trackLayout = [
+      { track: 'Infrastructure', color: '#a371f7', phases: ['phase_0', 'phase_1'], startCol: 1, spanCols: 2 },
+      { track: 'Contracts & Fixes', color: '#3fb950', phases: ['phase_2', 'phase_3'], startCol: 1, spanCols: 3 },
+      { track: 'CDM-to-CSIO Converter', color: '#f85149', phases: ['phase_4'], startCol: 2, spanCols: 3 },
+      { track: 'Integration Testing', color: '#f778ba', phases: ['phase_5'], startCol: 4, spanCols: 2 }
     ];
 
-    var arrowLabels = [
-      { down: 'HTTP requests', up: 'HTML response' },
-      { down: 'Proxy + APIM key', up: 'JSON response' },
-      { down: 'Publish to queue', up: 'Read responses' },
-      { down: 'Consume messages', up: '' },
-      { down: 'Fan-out per carrier', up: 'Premium results' }
-    ];
+    trackLayout.forEach(function(t) {
+      var phaseNames = t.phases.map(function(pid) {
+        var p = SR.phases.find(function(pp) { return pp.id === pid; });
+        return p ? p.title : pid;
+      }).join(' + ');
 
-    dataFlowOrder.forEach(function(comp, idx) {
-      var stateColor = comp.state_color || 'blue';
-      var problemCount = (comp.problems || []).length;
-      var criticalCount = (comp.problems || []).filter(function(p) { return p.severity === 'critical'; }).length;
-      var problemClass = criticalCount > 0 ? 'has-critical' : (problemCount > 0 ? 'no-critical' : 'all-good');
-
-      html += '<div class="mv2-pipe-node" data-comp-id="' + comp.id + '">';
-      html += '<div class="mv2-pipe-card state-' + stateColor + (comp.is_infrastructure ? ' infra' : '') + '" data-comp-id="' + comp.id + '">';
-
-      /* Step number */
-      html += '<div class="mv2-pipe-step exec">' + comp.step + '</div>';
-
-      /* Info */
-      html += '<div class="mv2-pipe-info">';
-      html += '<div class="mv2-pipe-name">' + escHtml(comp.name) + '</div>';
-      html += '<div class="mv2-pipe-sub">';
-      html += '<span class="mv2-pipe-azure">' + escHtml(comp.azure_resource.split('(')[0].trim()) + '</span>';
-      html += '<span>' + escHtml(comp.state_label || comp.current_state) + '</span>';
-      html += '</div>';
-      html += '</div>';
-
-      /* Problem count */
-      html += '<div class="mv2-pipe-problems ' + problemClass + '">' + problemCount + '</div>';
-
-      html += '</div>'; /* .mv2-pipe-card */
-      html += '</div>'; /* .mv2-pipe-node */
-
-      /* Arrow (not after last) */
-      if (idx < dataFlowOrder.length - 1) {
-        var al = arrowLabels[idx];
-        html += '<div class="mv2-pipe-arrow">';
-        html += '<div class="mv2-pipe-arrow-line"></div>';
-        html += '<div class="mv2-pipe-arrow-head"></div>';
-        html += '<div class="mv2-pipe-arrow-labels">';
-        html += '<span class="mv2-pipe-arrow-label down">' + escHtml(al.down) + '</span>';
-        if (al.up) html += '<span class="mv2-pipe-arrow-label up">' + escHtml(al.up) + '</span>';
-        html += '</div>';
-        html += '</div>';
-      }
-    });
-
-    html += '</div>'; /* .mv2-pipeline */
-    html += '</div>'; /* left column */
-
-    /* -- RIGHT: Detail Panel -- */
-    html += '<div class="mv2-detail" id="mv2-detail">';
-    html += '<div class="mv2-detail-empty">';
-    html += '<div class="mv2-detail-empty-arrow">&#8592;</div>';
-    html += '<div class="mv2-detail-empty-text">Select a component from the pipeline</div>';
-    html += '<div class="mv2-detail-empty-hint">Click any service to see its problems, fixes, and deployment details</div>';
-    html += '</div>';
-    html += '</div>';
-
-    html += '</div>'; /* .mv2-main */
-
-    /* ========================================
-       PENDING DECISIONS
-       ======================================== */
-    html += '<div class="mv2-decisions">';
-    html += '<div class="mv2-decisions-title">Pending Decisions</div>';
-    html += '<div class="mv2-decisions-grid">';
-
-    MV.decisions.forEach(function(dec) {
-      html += '<div class="mv2-decision">';
-      html += '<div class="mv2-decision-q">' + escHtml(dec.question) + '</div>';
-      html += '<div class="mv2-decision-options">';
-      dec.options.forEach(function(opt) {
-        html += '<div class="mv2-decision-opt">' + escHtml(opt) + '</div>';
-      });
-      html += '</div>';
-      html += '<div class="mv2-decision-rec">';
-      html += '<div class="mv2-decision-rec-label">Recommendation</div>';
-      html += escHtml(dec.recommendation);
-      html += '</div>';
-      html += '<div class="mv2-decision-status ' + dec.status + '">';
-      if (dec.status === 'pending') html += '&#9679; ';
-      else if (dec.status === 'decided') html += '&#10003; ';
-      else html += '&#9888; ';
-      html += escHtml(dec.status.replace(/-/g, ' '));
-      html += '</div>';
-      html += '</div>';
-    });
-
-    html += '</div>'; /* .mv2-decisions-grid */
-    html += '</div>'; /* .mv2-decisions */
-
-    /* ========================================
-       TIMELINE
-       ======================================== */
-    html += '<div class="mv2-timeline">';
-    html += '<div class="mv2-timeline-title">Delivery Timeline</div>';
-    html += '<div class="mv2-timeline-row">';
-
-    /* Tier 1 */
-    var t1 = MV.timeline.tier1;
-    html += '<div class="mv2-tier tier1">';
-    html += '<div class="mv2-tier-name">' + escHtml(t1.name) + '</div>';
-    html += '<div class="mv2-tier-desc">' + escHtml(t1.description) + '</div>';
-    html += '<div class="mv2-tier-stats">';
-    html += '<div class="mv2-tier-stat"><div class="mv2-tier-stat-val">' + escHtml(t1.engineering_days) + '</div><div class="mv2-tier-stat-label">Eng Days</div></div>';
-    html += '<div class="mv2-tier-stat"><div class="mv2-tier-stat-val">' + escHtml(t1.calendar_weeks) + '</div><div class="mv2-tier-stat-label">Cal Weeks</div></div>';
-    html += '</div>';
-    html += '<div class="mv2-tier-outcome">' + escHtml(t1.what_you_get) + '</div>';
-    html += '</div>';
-
-    /* Tier 2 */
-    var t2 = MV.timeline.tier2;
-    html += '<div class="mv2-tier tier2">';
-    html += '<div class="mv2-tier-name">' + escHtml(t2.name) + '</div>';
-    html += '<div class="mv2-tier-desc">' + escHtml(t2.description) + '</div>';
-    html += '<div class="mv2-tier-stats">';
-    html += '<div class="mv2-tier-stat"><div class="mv2-tier-stat-val">' + escHtml(t2.engineering_days) + '</div><div class="mv2-tier-stat-label">Eng Days</div></div>';
-    html += '<div class="mv2-tier-stat"><div class="mv2-tier-stat-val">' + escHtml(t2.calendar_weeks) + '</div><div class="mv2-tier-stat-label">Cal Weeks</div></div>';
-    html += '</div>';
-    html += '<div class="mv2-tier-outcome">' + escHtml(t2.what_you_get) + '</div>';
-    if (t2.depends_on) {
-      html += '<div class="mv2-tier-depends">Depends on: ' + escHtml(t2.depends_on) + '</div>';
-    }
-    html += '</div>';
-
-    html += '</div>'; /* .mv2-timeline-row */
-    html += '</div>'; /* .mv2-timeline */
-
-    /* ── Write to DOM ── */
-    el.innerHTML = html;
-
-    /* ── Bind pipeline node clicks ── */
-    el.querySelectorAll('.mv2-pipe-card').forEach(function(card) {
-      card.addEventListener('click', function() {
-        var compId = card.dataset.compId;
-        selectMvpComponent(compId, el, MV);
-      });
-    });
-
-    /* Auto-select the first execution step (CarrierConnector) */
-    var firstCard = el.querySelector('.mv2-pipe-card[data-comp-id="carrier_connector"]');
-    if (firstCard) firstCard.click();
-  }
-
-  function selectMvpComponent(compId, rootEl, MV) {
-    /* Find the component */
-    var comp = null;
-    MV.executionOrder.forEach(function(c) { if (c.id === compId) comp = c; });
-    if (!comp) return;
-
-    mvpV2SelectedStep = compId;
-
-    /* Highlight active card */
-    rootEl.querySelectorAll('.mv2-pipe-card').forEach(function(c) { c.classList.remove('active'); });
-    var activeCard = rootEl.querySelector('.mv2-pipe-card[data-comp-id="' + compId + '"]');
-    if (activeCard) activeCard.classList.add('active');
-
-    /* Highlight the execution path */
-    highlightMvpPath(compId, rootEl, MV);
-
-    /* Build detail panel */
-    var detailEl = document.getElementById('mv2-detail');
-    var d = '';
-
-    /* Header */
-    d += '<div class="mv2-detail-header">';
-    d += '<div class="mv2-detail-step-row">';
-    d += '<div class="mv2-detail-step-num">' + comp.step + '</div>';
-    d += '<div>';
-    d += '<div class="mv2-detail-name">' + escHtml(comp.name) + '</div>';
-    d += '<div class="mv2-detail-subtitle">' + escHtml(comp.subtitle) + '</div>';
-    d += '</div>';
-    d += '</div>';
-    d += '<div class="mv2-detail-meta">';
-
-    /* State badge */
-    var stateColor = comp.state_color || 'blue';
-    var stateBgMap = { red: 'rgba(248,81,73,0.12)', yellow: 'rgba(210,153,34,0.12)', green: 'rgba(63,185,80,0.12)', blue: 'rgba(79,143,255,0.12)' };
-    var stateTextMap = { red: '#f85149', yellow: '#d29922', green: '#3fb950', blue: '#4f8fff' };
-    d += '<span class="mv2-detail-tag" style="background:' + (stateBgMap[stateColor] || stateBgMap.blue) + ';color:' + (stateTextMap[stateColor] || stateTextMap.blue) + '">' + escHtml(comp.state_label || comp.current_state) + '</span>';
-
-    /* Azure resource */
-    d += '<span class="mv2-detail-tag" style="background:rgba(163,113,247,0.1);color:#a371f7">' + escHtml(comp.azure_resource) + '</span>';
-
-    d += '</div>';
-    d += '</div>'; /* .mv2-detail-header */
-
-    /* Body */
-    d += '<div class="mv2-detail-body">';
-
-    /* Why this is at this position */
-    var whyText = comp.why_first || comp.why_next || '';
-    if (whyText) {
-      d += '<div class="mv2-why">';
-      d += '<div class="mv2-why-label">Why Step ' + comp.step + '?</div>';
-      d += '<div class="mv2-why-text">' + escHtml(whyText) + '</div>';
-      d += '</div>';
-    }
-
-    /* Azure resource name */
-    if (comp.azure_name) {
-      d += '<div style="margin-bottom:16px;font-size:12px;color:#8b949e">';
-      d += '<span style="font-weight:600;color:#a371f7">Azure Resource:</span> ';
-      d += '<code style="background:#0d1117;padding:2px 8px;border-radius:4px;font-family:\'SF Mono\',monospace;color:#c9d1d9">' + escHtml(comp.azure_name) + '</code>';
-      d += '</div>';
-    }
-
-    /* Problems */
-    if (comp.problems && comp.problems.length > 0) {
-      var critCount = comp.problems.filter(function(p) { return p.severity === 'critical'; }).length;
-      var highCount = comp.problems.filter(function(p) { return p.severity === 'high'; }).length;
-      var otherCount = comp.problems.length - critCount - highCount;
-
-      d += '<div class="mv2-problems-title">';
-      d += comp.problems.length + ' Problem' + (comp.problems.length > 1 ? 's' : '');
-      if (critCount > 0) d += ' <span style="color:#f85149">(' + critCount + ' critical)</span>';
-      d += '</div>';
-
-      comp.problems.forEach(function(prob) {
-        d += '<div class="mv2-problem">';
-
-        /* Head: severity + title */
-        d += '<div class="mv2-problem-head">';
-        d += '<span class="mv2-problem-sev ' + prob.severity + '">' + escHtml(prob.severity) + '</span>';
-        d += '<span class="mv2-problem-title">' + escHtml(prob.title) + '</span>';
-        d += '</div>';
-
-        /* Description */
-        d += '<div class="mv2-problem-desc">' + escHtml(prob.description) + '</div>';
-
-        /* Fix */
-        d += '<div class="mv2-problem-fix">';
-        d += '<div class="mv2-problem-fix-label">Fix</div>';
-        d += escHtml(prob.fix);
-        d += '</div>';
-
-        /* Claude automation tag */
-        var claudeLabel = prob.claude_can_do;
-        var claudeClass = prob.claude_can_do;
-        if (claudeLabel === 'yes') claudeLabel = 'Claude can automate';
-        else if (claudeLabel === 'yes-with-review') claudeLabel = 'Claude + human review';
-        else if (claudeLabel === 'partially') claudeLabel = 'Partially automatable';
-        else if (claudeLabel === 'no') claudeLabel = 'Manual / requires access';
-
-        d += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
-        d += '<span class="mv2-problem-claude ' + claudeClass + '">' + escHtml(claudeLabel) + '</span>';
-        if (prob.claude_detail) {
-          d += '<span style="font-size:11px;color:#8b949e">' + escHtml(prob.claude_detail) + '</span>';
+      var totalItems = 0;
+      var doneItems = 0;
+      t.phases.forEach(function(pid) {
+        var p = SR.phases.find(function(pp) { return pp.id === pid; });
+        if (p) {
+          totalItems += p.items.length;
+          doneItems += p.items.filter(function(i) { return i.status === 'complete'; }).length;
         }
-        d += '</div>';
-
-        d += '</div>'; /* .mv2-problem */
       });
-    }
+      var pct = totalItems > 0 ? Math.round(doneItems / totalItems * 100) : 0;
 
-    /* Verification test */
-    if (comp.test_to_verify) {
-      d += '<div class="mv2-verify">';
-      d += '<div class="mv2-verify-label">Verification Test</div>';
-      d += '<div class="mv2-verify-text">' + escHtml(comp.test_to_verify) + '</div>';
-      d += '</div>';
-    }
+      html += '<div class="mvt-gantt-row">';
+      html += '<div class="mvt-gantt-label"><span class="mvt-track-dot" style="background:' + t.color + '"></span>' + t.track + '</div>';
 
-    /* Deploy target */
-    if (comp.deploy_to) {
-      d += '<div class="mv2-deploy">';
-      d += '<span class="mv2-deploy-label">Deploy to:</span>';
-      d += '<span>' + escHtml(comp.deploy_to) + '</span>';
-      d += '</div>';
-    }
-
-    d += '</div>'; /* .mv2-detail-body */
-
-    detailEl.innerHTML = d;
-    detailEl.scrollTop = 0;
-  }
-
-  function highlightMvpPath(compId, rootEl, MV) {
-    /* Find the step number of the selected component */
-    var selectedStep = null;
-    MV.executionOrder.forEach(function(c) { if (c.id === compId) selectedStep = c.step; });
-    if (selectedStep === null) return;
-
-    /* Data flow order maps: index in visual pipeline -> step number */
-    var dataFlowSteps = [6, 5, 4, 3, 2, 1]; /* RPM=6, BFF=5, QM=4, SB=3, Orch=2, CC=1 */
-
-    /* Find position in visual pipeline */
-    var selectedVisualIdx = -1;
-    dataFlowSteps.forEach(function(s, idx) { if (s === selectedStep) selectedVisualIdx = idx; });
-
-    /* Dim nodes above the selected one (they come AFTER in execution order) */
-    var allNodes = rootEl.querySelectorAll('.mv2-pipe-node');
-    allNodes.forEach(function(node, idx) {
-      var nodeCompId = node.querySelector('.mv2-pipe-card').dataset.compId;
-      if (idx < selectedVisualIdx) {
-        /* Above = later in execution order = dim slightly */
-        node.style.opacity = '0.45';
-      } else {
-        /* At or below = already built or currently building = full opacity */
-        node.style.opacity = '1';
+      /* Empty cells before the bar */
+      for (var c = 1; c < t.startCol; c++) {
+        html += '<div class="mvt-gantt-cell"></div>';
       }
+
+      /* The bar spanning multiple columns */
+      html += '<div class="mvt-gantt-bar" style="grid-column: span ' + t.spanCols + '; --bar-color:' + t.color + '">';
+      html += '<div class="mvt-bar-fill" style="width:' + pct + '%"></div>';
+      html += '<div class="mvt-bar-text">' + phaseNames + ' <span class="mvt-bar-pct">' + pct + '%</span></div>';
+      html += '</div>';
+
+      /* Empty cells after the bar */
+      var remaining = 5 - (t.startCol - 1 + t.spanCols);
+      for (var r = 0; r < remaining; r++) {
+        html += '<div class="mvt-gantt-cell"></div>';
+      }
+
+      html += '</div>';
     });
 
-    /* Highlight arrows in the path */
-    var allArrows = rootEl.querySelectorAll('.mv2-pipe-arrow');
-    allArrows.forEach(function(arrow, idx) {
-      if (idx >= selectedVisualIdx) {
-        arrow.querySelector('.mv2-pipe-arrow-line').style.background = '#4f8fff';
-        arrow.querySelector('.mv2-pipe-arrow-head').style.borderTopColor = '#4f8fff';
-      } else {
-        arrow.querySelector('.mv2-pipe-arrow-line').style.background = '#30363d';
-        arrow.querySelector('.mv2-pipe-arrow-head').style.borderTopColor = '#30363d';
-      }
+    html += '</div>'; /* end gantt */
+
+    /* Dependency arrows text */
+    html += '<div class="mvt-deps">';
+    html += '<h4>Dependencies</h4>';
+    html += '<div class="mvt-deps-grid">';
+    SR.dependencies.forEach(function(dep) {
+      var fromPhase = SR.phases.find(function(p) { return p.id === dep.from; });
+      var toPhase = SR.phases.find(function(p) { return p.id === dep.to; });
+      html += '<div class="mvt-dep-item">';
+      html += '<span class="mvt-dep-from">' + (fromPhase ? fromPhase.title : dep.from) + '</span>';
+      html += '<span class="mvt-dep-arrow">&#8594;</span>';
+      html += '<span class="mvt-dep-to">' + (toPhase ? toPhase.title : dep.to) + '</span>';
+      html += '<span class="mvt-dep-reason">' + dep.reason + '</span>';
+      html += '</div>';
     });
+    html += '</div></div>';
+    html += '</div>'; /* end section */
+
+    /* ── Phase-by-Phase Checklist ── */
+    html += '<div class="mvt-section"><h3>Phase Checklist</h3>';
+    html += '<p class="mvt-note">Click any phase to expand its tasks. Critical items are marked.</p>';
+
+    SR.phases.forEach(function(phase, idx) {
+      var totalItems = phase.items.length;
+      var doneItems = phase.items.filter(function(i) { return i.status === 'complete'; }).length;
+      var critItems = phase.items.filter(function(i) { return i.critical; }).length;
+      var pct = totalItems > 0 ? Math.round(doneItems / totalItems * 100) : 0;
+
+      html += '<div class="mvt-phase-card" onclick="toggleMvtPhase(\'' + phase.id + '\')">';
+      html += '<div class="mvt-phase-header" style="--phase-color:' + phase.color + '">';
+      html += '<span class="mvt-phase-icon">' + phase.icon + '</span>';
+      html += '<div class="mvt-phase-info">';
+      html += '<div class="mvt-phase-title">Phase ' + idx + ': ' + phase.title + '</div>';
+      html += '<div class="mvt-phase-meta">' + phase.effort + ' &middot; ' + phase.owner + ' &middot; ' + doneItems + '/' + totalItems + ' done &middot; ' + critItems + ' critical</div>';
+      html += '</div>';
+      html += '<div class="mvt-phase-progress"><div class="mvt-phase-bar" style="width:' + pct + '%;background:' + phase.color + '"></div></div>';
+      html += '<span class="mvt-phase-chevron" id="mvt-chev-' + phase.id + '">&#9654;</span>';
+      html += '</div>';
+
+      html += '<div class="mvt-phase-body" id="mvt-body-' + phase.id + '">';
+      html += '<p class="mvt-phase-desc">' + phase.description + '</p>';
+
+      phase.items.forEach(function(item) {
+        var isDone = item.status === 'complete';
+        var isActive = item.status === 'in_progress';
+        var cls = isDone ? 'mvt-item-done' : isActive ? 'mvt-item-active' : 'mvt-item-pending';
+        var check = isDone ? '&#9745;' : '&#9744;';
+        html += '<div class="mvt-item ' + cls + '">';
+        html += '<span class="mvt-item-check">' + check + '</span>';
+        html += '<span class="mvt-item-text">' + item.text + '</span>';
+        if (item.critical) html += '<span class="mvt-item-crit">CRITICAL</span>';
+        html += '</div>';
+      });
+
+      html += '</div></div>';
+    });
+
+    html += '</div>'; /* end section */
+
+    /* ── Data Flow Diagram ── */
+    html += '<div class="mvt-section"><h3>Data Flow — What Needs Fixing Where</h3>';
+    html += '<p class="mvt-note">Follow the data flow. Red blocks are broken. Yellow blocks need work. Green blocks are ready.</p>';
+    html += '<div class="mvt-flow">';
+
+    var flowSteps = [
+      { id: 'rpm_client', label: 'RPM Client', sub: 'Blazor Frontend', status: 'warn', fixes: ['CarrierTargets = null', 'No async polling'] },
+      { id: 'bff', label: 'Web BFF', sub: 'API Proxy', status: 'broken', fixes: ['Empty API URL', 'Thread-safety bug'] },
+      { id: 'quote_mgmt', label: 'Quote Mgmt', sub: 'CRUD + Queue Publish', status: 'broken', fixes: ['Wrong SB namespace', 'Wrong queue names', 'DI not registered'] },
+      { id: 'service_bus', label: 'Service Bus', sub: '3 Queues', status: 'broken', fixes: ['Not provisioned', 'Queue name mismatch'] },
+      { id: 'orchestrator', label: 'Orchestrator', sub: 'Fan-out', status: 'warn', fixes: ['carrierTarget vs carrierContext'] },
+      { id: 'carrier_connector', label: 'Carrier Connector', sub: 'CDM → XML → API', status: 'broken', fixes: ['No CDM→CSIO converter', 'No response parser'] },
+      { id: 'carriers', label: 'Carriers', sub: 'Aviva / Peace Hills', status: 'warn', fixes: ['Need sandbox creds', 'IP whitelisting'] }
+    ];
+
+    flowSteps.forEach(function(step, idx) {
+      var color = step.status === 'broken' ? '#f85149' : step.status === 'warn' ? '#d29922' : '#3fb950';
+      var bgColor = step.status === 'broken' ? 'rgba(248,81,73,.08)' : step.status === 'warn' ? 'rgba(210,153,34,.08)' : 'rgba(63,185,80,.08)';
+      html += '<div class="mvt-flow-step" style="border-color:' + color + ';background:' + bgColor + '">';
+      html += '<div class="mvt-flow-label" style="color:' + color + '">' + step.label + '</div>';
+      html += '<div class="mvt-flow-sub">' + step.sub + '</div>';
+      html += '<div class="mvt-flow-fixes">';
+      step.fixes.forEach(function(f) { html += '<div class="mvt-flow-fix">&#8226; ' + f + '</div>'; });
+      html += '</div></div>';
+      if (idx < flowSteps.length - 1) html += '<div class="mvt-flow-arrow">&#8594;</div>';
+    });
+
+    html += '</div></div>';
+
+    /* ── Summary Stats ── */
+    var totalAll = 0, doneAll = 0, critAll = 0;
+    SR.phases.forEach(function(p) {
+      totalAll += p.items.length;
+      doneAll += p.items.filter(function(i) { return i.status === 'complete'; }).length;
+      critAll += p.items.filter(function(i) { return i.critical; }).length;
+    });
+
+    html += '<div class="mvt-stats">';
+    html += '<div class="mvt-stat"><div class="mvt-stat-num">' + totalAll + '</div><div class="mvt-stat-label">Total Tasks</div></div>';
+    html += '<div class="mvt-stat"><div class="mvt-stat-num">' + doneAll + '</div><div class="mvt-stat-label">Completed</div></div>';
+    html += '<div class="mvt-stat"><div class="mvt-stat-num">' + critAll + '</div><div class="mvt-stat-label">Critical</div></div>';
+    html += '<div class="mvt-stat"><div class="mvt-stat-num">6</div><div class="mvt-stat-label">Phases</div></div>';
+    html += '<div class="mvt-stat"><div class="mvt-stat-num">3</div><div class="mvt-stat-label">Parallel Tracks</div></div>';
+    html += '</div>';
+
+    el.innerHTML = html;
+    } catch(e) {
+      console.error('MVP Tracker render error:', e);
+      el.innerHTML = '<div style="padding:40px;color:#f85149"><h3>Render Error</h3><pre>' + e.message + '</pre></div>';
+    }
   }
+
+  window.toggleMvtPhase = function(phaseId) {
+    var body = document.getElementById('mvt-body-' + phaseId);
+    var chev = document.getElementById('mvt-chev-' + phaseId);
+    if (!body) return;
+    var isOpen = body.classList.contains('open');
+    /* Close all */
+    document.querySelectorAll('.mvt-phase-body.open').forEach(function(b) { b.classList.remove('open'); });
+    document.querySelectorAll('.mvt-phase-chevron.open').forEach(function(c) { c.classList.remove('open'); });
+    if (!isOpen) { body.classList.add('open'); if (chev) chev.classList.add('open'); }
+  };
+
 
     /* -- Event Listeners ---------------------------- */
   document.querySelectorAll('.tab').forEach(function (t) {
