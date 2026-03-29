@@ -160,6 +160,7 @@ if (isLocal || sessionStorage.getItem('archex-auth') === 'true') {
 <script src="mvp-v2-data.js"></script>
 <script src="insights-data.js"></script>
 <script src="system-review-data.js"></script>
+<script src="task-details-data.js"></script>
 <script src="data.js"></script>
 <script>
 /* -- GLOSSARY & Tooltip System ------------------ */
@@ -2192,16 +2193,28 @@ window.dismissOnboarding = function() {
       html += '<div class="mvt-phase-body" id="mvt-body-' + phase.id + '">';
       html += '<p class="mvt-phase-desc">' + phase.description + '</p>';
 
+      var TD = window.TASK_DETAILS || {};
       phase.items.forEach(function(item) {
         var isDone = item.status === 'complete';
         var isActive = item.status === 'in_progress';
         var cls = isDone ? 'mvt-item-done' : isActive ? 'mvt-item-active' : 'mvt-item-pending';
         var check = isDone ? '&#9745;' : '&#9744;';
-        html += '<div class="mvt-item ' + cls + '">';
+        var hasDetail = !!TD[item.id];
+        html += '<div class="mvt-item ' + cls + (hasDetail ? ' mvt-item-clickable' : '') + '"' + (hasDetail ? ' onclick="toggleTaskDetail(\'' + item.id + '\', event)"' : '') + '>';
         html += '<span class="mvt-item-check">' + check + '</span>';
-        html += '<span class="mvt-item-text">' + item.text + '</span>';
+        html += '<span class="mvt-item-text">' + item.text + (hasDetail ? ' <span class="mvt-item-expand">&#9660;</span>' : '') + '</span>';
         if (item.critical) html += '<span class="mvt-item-crit">CRITICAL</span>';
         html += '</div>';
+        if (hasDetail) {
+          var d = TD[item.id];
+          html += '<div class="mvt-task-detail" id="mvt-td-' + item.id + '">';
+          html += '<div class="mvt-td-section"><div class="mvt-td-label">What</div><div class="mvt-td-content">' + d.what + '</div></div>';
+          html += '<div class="mvt-td-section"><div class="mvt-td-label">Why It Matters</div><div class="mvt-td-content">' + d.why + '</div></div>';
+          html += '<div class="mvt-td-section"><div class="mvt-td-label">How To Do It</div><div class="mvt-td-content"><pre class="mvt-td-code">' + d.how + '</pre></div></div>';
+          html += '<div class="mvt-td-section"><div class="mvt-td-label">Concrete Example</div><div class="mvt-td-content"><pre class="mvt-td-code">' + d.example + '</pre></div></div>';
+          html += '<div class="mvt-td-section"><div class="mvt-td-label">Ties Into</div><div class="mvt-td-content">' + d.tilesInto + '</div></div>';
+          html += '</div>';
+        }
       });
 
       html += '</div></div>';
@@ -2270,6 +2283,21 @@ window.dismissOnboarding = function() {
     document.querySelectorAll('.mvt-phase-body.open').forEach(function(b) { b.classList.remove('open'); });
     document.querySelectorAll('.mvt-phase-chevron.open').forEach(function(c) { c.classList.remove('open'); });
     if (!isOpen) { body.classList.add('open'); if (chev) chev.classList.add('open'); }
+  };
+
+  window.toggleTaskDetail = function(itemId, event) {
+    event.stopPropagation();
+    var el = document.getElementById('mvt-td-' + itemId);
+    if (!el) return;
+    var isOpen = el.classList.contains('open');
+    /* Close all other task details in this phase */
+    el.closest('.mvt-phase-body').querySelectorAll('.mvt-task-detail.open').forEach(function(d) { d.classList.remove('open'); });
+    el.closest('.mvt-phase-body').querySelectorAll('.mvt-item-expand.open').forEach(function(e) { e.classList.remove('open'); });
+    if (!isOpen) {
+      el.classList.add('open');
+      var arrow = el.previousElementSibling.querySelector('.mvt-item-expand');
+      if (arrow) arrow.classList.add('open');
+    }
   };
 
 
