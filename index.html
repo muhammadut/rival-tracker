@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rival Rating Platform - Architecture Explorer</title>
-<link rel="stylesheet" href="styles.css?v=20260330c">
+<link rel="stylesheet" href="styles.css?v=20260330d">
 <!-- CSS extracted to styles.css -->
 </head>
 <body>
@@ -154,12 +154,12 @@ if (isLocal || sessionStorage.getItem('archex-auth') === 'true') {
   <div id="term-tooltip" class="term-tooltip"></div>
 </div>
 
-<script src="actionplan-data.js?v=20260330c"></script>
-<script src="mvp-v2-data.js?v=20260330c"></script>
-<script src="insights-data.js?v=20260330c"></script>
-<script src="system-review-data.js?v=20260330c"></script>
-<script src="task-details-data.js?v=20260330c"></script>
-<script src="data.js?v=20260330c"></script>
+<script src="actionplan-data.js?v=20260330d"></script>
+<script src="mvp-v2-data.js?v=20260330d"></script>
+<script src="insights-data.js?v=20260330d"></script>
+<script src="system-review-data.js?v=20260330d"></script>
+<script src="task-details-data.js?v=20260330d"></script>
+<script src="data.js?v=20260330d"></script>
 <script>
 /* -- GLOSSARY & Tooltip System ------------------ */
 var GLOSSARY = {
@@ -2134,7 +2134,7 @@ window.dismissOnboarding = function() {
     html += '<div class="mvt-method-card"><div class="mvt-method-num">2</div><div class="mvt-method-label">False claims removed</div></div>';
     html += '<div class="mvt-method-card"><div class="mvt-method-num">176</div><div class="mvt-method-label">Terraform files found</div></div>';
     html += '</div>';
-    html += '<p class="mvt-method-text" style="margin-top:12px">Two claims from earlier analysis were disproven and removed: (1) decimal vs double type mismatch — both services use decimal, no mismatch exists; (2) ServiceBusSettings not registered in DI — it is registered under a different class name. A deep dive on 2026-03-30 verified all Azure resources across 2 subscriptions: 19+ resources are live including Service Bus, Cosmos DB, SQL Server, APIM, Key Vault, ACR, 5 Container Apps, and full networking. Infrastructure is not a blocker — only config fixes and redeployment remain.</p>';
+    html += '<p class="mvt-method-text" style="margin-top:12px">Two claims from earlier analysis were disproven and removed: (1) decimal vs double for PremiumSummary — both services use decimal, no mismatch in the premium path; (2) ServiceBusSettings not registered in DI — it is registered under RatingServiceBusSettings. Azure resource verification on 2026-03-29 confirmed 19+ resources are live across 2 subscriptions: Service Bus, Cosmos DB, SQL Server, APIM, Key Vault, ACR, 5 Container Apps, and full networking. Infrastructure is not a blocker — only config fixes and redeployment remain.</p>';
     html += '<div class="mvt-disclaimer">' + (SR.disclaimer || '') + '</div>';
     html += '</div>';
 

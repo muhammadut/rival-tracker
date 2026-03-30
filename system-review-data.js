@@ -53,8 +53,8 @@ window.SYSTEM_REVIEW_DATA = {
       subtitle: 'Make code deployable',
       color: '#4f8fff',
       icon: '🏗️',
-      status: 'not_started',
-      description: 'Each service needs a CI/CD pipeline that builds a Docker image, pushes to Azure Container Registry, and deploys to Container Apps. Currently ZERO pipelines exist for Rating Platform services.',
+      status: 'in_progress',
+      description: 'Each service needs a CI/CD pipeline that builds a Docker image, pushes to Azure Container Registry, and deploys to Container Apps. Philip has set up pipelines for Orchestrator, CarrierConnector, and Central Schema. QuoteManagement and BFF pipelines still needed.',
       owner: 'Tariq + DevOps',
       effort: '2-3 days',
       items: [
@@ -104,7 +104,7 @@ window.SYSTEM_REVIEW_DATA = {
         { id: 'p3_3', text: 'BFF: Enable Polly resilience policies (commented out in Program.cs)', status: 'not_started', critical: false },
         { id: 'p3_4', text: 'QuoteManagement: Fix Service Bus namespace (sbns-rating-dev-001 → sbns-ratingplatform-dev-001)', status: 'not_started', critical: true },
         { id: 'p3_5', text: 'QuoteManagement: Fix queue names to match shared constants', status: 'not_started', critical: true },
-        { id: 'p3_6', text: 'QuoteManagement: Register ServiceBusSettings in DI (IOptions not registered)', status: 'not_started', critical: true },
+        { id: 'p3_6', text: 'QuoteManagement: Verify ServiceBusSettings resolves correctly at runtime (registered as RatingServiceBusSettings)', status: 'complete', critical: false },
         { id: 'p3_7', text: 'QuoteManagement: Create environment-specific appsettings (dev, qa, prod)', status: 'not_started', critical: true },
         { id: 'p3_8', text: 'QuoteManagement: Fix CarrierTargets always null from frontend', status: 'not_started', critical: true },
         { id: 'p3_9', text: 'RatingOrchestrator: Verify it receives messages after QuoteManagement fixes', status: 'not_started', critical: true },
@@ -241,7 +241,7 @@ window.SYSTEM_REVIEW_DATA = {
       keyIssues: [
         { severity: 'critical', issue: 'Wrong Service Bus namespace', detail: 'Configured as sbns-rating-dev-001 but should be sbns-ratingplatform-dev-001. Messages go to a non-existent namespace.' },
         { severity: 'critical', issue: 'Wrong queue names', detail: 'Uses sbq-rating-requests-dev but Orchestrator listens on sbq-initial-rating-requests. Messages are never consumed.' },
-        { severity: 'warning', issue: 'ServiceBusSettings DI registration uses different class name', detail: 'IOptions<ServiceBusSettings> is injected but the registration uses RatingServiceBusSettings (different class name). The settings class exists and is registered, but the name mismatch may cause confusion. Verify the correct class is resolved at runtime.' },
+        { severity: 'info', issue: 'ServiceBusSettings DI registration uses different class name', detail: 'IOptions<ServiceBusSettings> is injected but the registration uses RatingServiceBusSettings (different class name). The settings class exists and is registered, but the name mismatch may cause confusion. Verify the correct class is resolved at runtime.' },
         { severity: 'warning', issue: 'No environment-specific config', detail: 'Only one appsettings.json with hardcoded dev values. No appsettings.Production.json.' }
       ]
     },
@@ -280,7 +280,7 @@ window.SYSTEM_REVIEW_DATA = {
       verdict: 'Architecturally functional. The fan-out logic is correct and simple. Main issue is the message contract mismatch — it sends "carrierTarget" but CarrierConnector expects "carrierContext". Will be fixed by shared contracts package.',
       criteria: [
         { principle: 'deployable', status: 'fail', note: 'No CI/CD pipeline exists' },
-        { principle: 'contract_aligned', status: 'fail', note: 'Own copies of CDM models. Uses double for NumberValue (matches CarrierConnector but should be decimal for currency precision).' },
+        { principle: 'contract_aligned', status: 'fail', note: 'Own copies of CDM models. PremiumSummary correctly uses decimal. DynamicFieldValue.NumberValue uses double (should be decimal).' },
         { principle: 'scalable', status: 'pass', note: 'Stateless worker service — scales by adding instances' },
         { principle: 'observable', status: 'pass', note: 'OpenTelemetry tracing + App Insights configured' },
         { principle: 'resilient', status: 'pass', note: 'Dead-letter handling, message abandonment on transient errors' },
@@ -305,7 +305,7 @@ window.SYSTEM_REVIEW_DATA = {
       verdict: 'The most valuable service in the system. Has real business logic (premium rules), carrier adapters (Aviva, PeaceHills, SGI) with OAuth2 auth, resilience policies, and blob storage archival. The critical missing piece is the CDM-to-CSIO transformer — adapters are ready but have no XML to send.',
       criteria: [
         { principle: 'deployable', status: 'fail', note: 'No CI/CD pipeline exists' },
-        { principle: 'contract_aligned', status: 'fail', note: 'Own copies of CDM models. Uses double for NumberValue (wrong).' },
+        { principle: 'contract_aligned', status: 'fail', note: 'Own copies of CDM models. PremiumSummary correctly uses decimal. DynamicFieldValue.NumberValue uses double (should be decimal).' },
         { principle: 'scalable', status: 'pass', note: 'Stateless worker, concurrent message processing (10 concurrent), independent scaling' },
         { principle: 'observable', status: 'pass', note: 'OpenTelemetry + custom metrics + Activity tracing per carrier call' },
         { principle: 'resilient', status: 'pass', note: 'Polly retry (3x), circuit breaker (5 failures → 30s break), timeout (30s per request), dead-letter on permanent errors, abandon on transient' },
@@ -538,7 +538,7 @@ window.SYSTEM_REVIEW_DATA = {
       'Zero CI/CD pipelines for Rating Platform services',
       'CDM-to-CSIO converter does not exist (adapters have nothing to send)',
       'Infrastructure provisioned but not fully configured (queues not created, collections not seeded, secrets not populated)',
-      'No shared contracts package — each service maintains its own copies'
+      'DynamicFieldValue.NumberValue uses double in CarrierConnector/Orchestrator (should be decimal)'
     ]
   },
 
@@ -607,7 +607,7 @@ window.SYSTEM_REVIEW_DATA = {
     ],
     disproven: [
       { id: 'vd-1', claim: 'ServiceBusSettings not registered in DI', reality: 'Program.cs has Configure<RatingServiceBusSettings>() and Configure<OpportunitiesServiceBusSettings>() properly registered. Someone (likely Mehul) fixed this. Removed from task list.', impact: 'Saved ~5 min of unnecessary work.' },
-      { id: 'vd-2', claim: 'decimal vs double type mismatch for premiums', reality: 'Both Orchestrator PremiumSummary and CarrierConnector PremiumSummary use decimal for all monetary fields. No mismatch exists in the critical path.', impact: 'Removed false alarm from critical blockers.' }
+      { id: 'vd-2', claim: 'decimal vs double type mismatch for premiums', reality: 'Both Orchestrator and CarrierConnector PremiumSummary use decimal for monetary fields. No mismatch in the premium path. DynamicFieldValue.NumberValue is still double in CarrierConnector (minor, non-premium field).', impact: 'Removed false alarm from critical blockers.' }
     ],
     newInsight: 'QuoteManagement DI registration uses RatingServiceBusSettings (new class name) rather than the original ServiceBusSettings. The config section mapping should be verified at runtime to ensure the correct class resolves.'
   },
@@ -672,7 +672,7 @@ window.SYSTEM_REVIEW_DATA = {
     ],
     whatThisMeans: 'The infrastructure is live. Service Bus (sbns-ratingplatform-dev-001), Cosmos DB (cosdb-quotemanagement-dev-001), SQL Server (sqlsrv-ratingplatform-dev-001), APIM (apim-ratingplatform-dev-001), Key Vault, Storage, ACR, 3 Container Apps, VNet, and monitoring are all provisioned. We only need config fixes and redeployment.',
     whatWeNeed: [
-      { item: 'Azure subscription with Contributor access', from: 'Management / Deji', critical: true },
+      { item: 'Verify current access level on both subscriptions (we have Specified Access)', from: 'Self-verify / Deji', critical: true },
       { item: 'Push access to 5 repos (BFF, QuoteManagement, Orchestrator, CarrierConnector, RPM Client)', from: 'Management', critical: true },
       { item: 'NuGet PAT for private Rival feed', from: 'DevOps', critical: true },
       { item: 'Azure AD app registration (or permission to create one)', from: 'Management / Deji', critical: true },

@@ -217,15 +217,6 @@ window.MVP_V2_DATA = {
           claude_detail: "Config file edit."
         },
         {
-          id: "qm-3",
-          title: "ServiceBusSettings not registered in DI",
-          severity: "critical",
-          description: "RatingSubmissionService injects IOptions<ServiceBusSettings> but it's never registered. Runtime crash when submitting a quote.",
-          fix: "Add builder.Services.Configure<ServiceBusSettings>(...) to Program.cs.",
-          claude_can_do: "yes",
-          claude_detail: "One line of code."
-        },
-        {
           id: "qm-4",
           title: "Response format mismatch -- flat vs nested",
           severity: "critical",
