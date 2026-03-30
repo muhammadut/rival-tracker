@@ -540,12 +540,33 @@ window.dismissOnboarding = function() {
         '</div>';
     }
 
+    /* Azure resource tag */
+    var azureTagHtml = '';
+    if (meta.azure && meta.azure.resource) {
+      var azIcons = {
+        'Container App': '\u2601',
+        'Service Bus': '\u21C4',
+        'API Management': '\u26D1',
+        'Cosmos DB': '\uD83D\uDDC4',
+        'SQL Server': '\uD83D\uDDC3',
+        'Storage Account': '\uD83D\uDCE6',
+        'Key Vault': '\uD83D\uDD12',
+        'Synapse + Data Factory': '\uD83D\uDCCA'
+      };
+      var azIcon = azIcons[meta.azure.resource] || '\u2601';
+      azureTagHtml = '<div class="card-azure-tag" title="' + esc(meta.azure.name) + ' (' + esc(meta.azure.sku) + ')">' +
+        '<span class="azure-icon">' + azIcon + '</span>' +
+        '<span class="azure-label">' + esc(meta.azure.resource) + '</span>' +
+        '</div>';
+    }
+
     el.innerHTML =
       '<div class="blocker-icon" title="Has blockers">\u26A0</div>' +
       busBadge +
       '<div class="card-icon ' + esc(iconClass) + '">' + icon + '</div>' +
       '<div class="card-title">' + esc(nd.label) + '</div>' +
       typeBadgeHtml +
+      azureTagHtml +
       '<div class="card-subtitle">' + esc(subtitle) + '</div>' +
       (owner ? '<div class="card-owner"><span class="card-owner-dot" style="background:' + ownerDotColor + '"></span>' + esc(owner) + '</div>' : '');
 
@@ -2617,6 +2638,16 @@ window.dismissOnboarding = function() {
     /* Subtitle - What This Does */
     var subtitle = WHAT_THIS_DOES[nodeId] || meta.description || TYPE_LABELS[nd.type] || '';
     html += '<div class="fv-hero-subtitle">' + esc(subtitle) + '</div>';
+
+    /* Azure resource banner */
+    if (meta.azure && meta.azure.resource) {
+      html += '<div class="fv-azure-banner">' +
+        '<div class="fv-azure-row"><span class="fv-azure-label">Azure Resource</span><span class="fv-azure-value">' + esc(meta.azure.resource) + '</span></div>' +
+        '<div class="fv-azure-row"><span class="fv-azure-label">Resource Name</span><span class="fv-azure-value fv-azure-mono">' + esc(meta.azure.name) + '</span></div>' +
+        '<div class="fv-azure-row"><span class="fv-azure-label">SKU / Tier</span><span class="fv-azure-value">' + esc(meta.azure.sku) + '</span></div>' +
+        '<div class="fv-azure-row"><span class="fv-azure-label">Region</span><span class="fv-azure-value">' + esc(meta.azure.region) + '</span></div>' +
+        '</div>';
+    }
 
     /* Stats row */
     var commitCount = (st && st.commits) ? st.commits : (enrichment && enrichment.commitCount != null ? enrichment.commitCount : '\u2014');
