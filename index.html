@@ -2107,13 +2107,140 @@ window.dismissOnboarding = function() {
     html += '<p class="mvt-method-text">This MVP plan was built through a systematic bottom-up analysis of the Rating Platform codebase across 6 repositories. Every claimed issue was verified against the actual source code with file paths and line numbers. The analysis included:</p>';
     html += '<div class="mvt-method-grid">';
     html += '<div class="mvt-method-card"><div class="mvt-method-num">6</div><div class="mvt-method-label">Repos analyzed</div></div>';
-    html += '<div class="mvt-method-card"><div class="mvt-method-num">14</div><div class="mvt-method-label">Bugs investigated</div></div>';
-    html += '<div class="mvt-method-card"><div class="mvt-method-num">12</div><div class="mvt-method-label">Confirmed real</div></div>';
+    html += '<div class="mvt-method-card"><div class="mvt-method-num">15</div><div class="mvt-method-label">Bugs investigated</div></div>';
+    html += '<div class="mvt-method-card"><div class="mvt-method-num">13</div><div class="mvt-method-label">Confirmed real</div></div>';
     html += '<div class="mvt-method-card"><div class="mvt-method-num">2</div><div class="mvt-method-label">False claims removed</div></div>';
+    html += '<div class="mvt-method-card"><div class="mvt-method-num">176</div><div class="mvt-method-label">Terraform files found</div></div>';
     html += '</div>';
-    html += '<p class="mvt-method-text" style="margin-top:12px">Two claims from earlier analysis were disproven and removed: (1) decimal vs double type mismatch — both services use double, no mismatch exists; (2) ServiceBusSettings not registered in DI — it is registered under a different class name. Every remaining item in this plan has been verified against the current code.</p>';
+    html += '<p class="mvt-method-text" style="margin-top:12px">Two claims from earlier analysis were disproven and removed: (1) decimal vs double type mismatch — both services use decimal, no mismatch exists; (2) ServiceBusSettings not registered in DI — it is registered under a different class name. A second deep dive on 2026-03-29 re-verified all 13 remaining blockers against live source code and discovered 176 Terraform files + 247 Bicep files across 6 IaC repos — eliminating the DevOps dependency for infrastructure provisioning.</p>';
     html += '<div class="mvt-disclaimer">' + (SR.disclaimer || '') + '</div>';
     html += '</div>';
+
+    /* ═══════════════════════════════════════════
+       SECTION 2B: VALIDATION FINDINGS
+       ═══════════════════════════════════════════ */
+    if (SR.validationFindings) {
+      var VF = SR.validationFindings;
+      html += '<div class="mvt-section mvt-validation">';
+      html += '<h3>Validation Findings <span class="mvt-date-badge">' + VF.date + '</span></h3>';
+      html += '<p class="mvt-method-text">' + VF.summary + '</p>';
+
+      /* Confirmed blockers */
+      html += '<div class="mvt-val-group">';
+      html += '<h4 class="mvt-val-heading mvt-val-confirmed">Confirmed Still Broken (' + VF.confirmed.length + ')</h4>';
+      html += '<div class="mvt-val-grid">';
+      VF.confirmed.forEach(function(f) {
+        var sevColor = f.severity === 'critical' ? '#f85149' : f.severity === 'high' ? '#d29922' : f.severity === 'medium' ? '#4f8fff' : '#8b949e';
+        html += '<div class="mvt-val-card" style="border-left:3px solid ' + sevColor + '">';
+        html += '<div class="mvt-val-card-head">';
+        html += '<span class="mvt-val-component">' + f.component + '</span>';
+        html += '<span class="mvt-val-sev" style="color:' + sevColor + '">' + f.severity.toUpperCase() + '</span>';
+        html += '</div>';
+        html += '<div class="mvt-val-issue">' + f.issue + '</div>';
+        html += '<div class="mvt-val-detail">' + f.detail + '</div>';
+        html += '</div>';
+      });
+      html += '</div></div>';
+
+      /* Disproven claims */
+      html += '<div class="mvt-val-group">';
+      html += '<h4 class="mvt-val-heading mvt-val-disproven">Disproven Claims Removed (' + VF.disproven.length + ')</h4>';
+      html += '<div class="mvt-val-grid">';
+      VF.disproven.forEach(function(d) {
+        html += '<div class="mvt-val-card mvt-val-card-disproven">';
+        html += '<div class="mvt-val-issue"><s>' + d.claim + '</s></div>';
+        html += '<div class="mvt-val-detail"><strong>Reality:</strong> ' + d.reality + '</div>';
+        html += '</div>';
+      });
+      html += '</div></div>';
+
+      if (VF.newInsight) {
+        html += '<div class="mvt-val-insight">' + VF.newInsight + '</div>';
+      }
+      html += '</div>';
+    }
+
+    /* ═══════════════════════════════════════════
+       SECTION 2C: TERRAFORM / IaC DISCOVERY
+       ═══════════════════════════════════════════ */
+    if (SR.terraformDiscovery) {
+      var TF = SR.terraformDiscovery;
+      html += '<div class="mvt-section mvt-terraform">';
+      html += '<h3>Infrastructure Discovery <span class="mvt-date-badge">' + TF.date + '</span></h3>';
+      html += '<div class="mvt-tf-headline">' + TF.headline + '</div>';
+      html += '<p class="mvt-method-text">' + TF.summary + '</p>';
+
+      /* Stats row */
+      html += '<div class="mvt-tf-stats">';
+      html += '<div class="mvt-method-card"><div class="mvt-method-num">' + TF.stats.terraformFiles + '</div><div class="mvt-method-label">Terraform files</div></div>';
+      html += '<div class="mvt-method-card"><div class="mvt-method-num">' + TF.stats.bicepFiles + '</div><div class="mvt-method-label">Bicep files</div></div>';
+      html += '<div class="mvt-method-card"><div class="mvt-method-num">' + TF.stats.dockerfiles + '</div><div class="mvt-method-label">Dockerfiles</div></div>';
+      html += '<div class="mvt-method-card"><div class="mvt-method-num">' + TF.stats.modulesReady + '</div><div class="mvt-method-label">Modules ready</div></div>';
+      html += '<div class="mvt-method-card"><div class="mvt-method-num mvt-tf-time">' + TF.stats.estimatedProvisionTime + '</div><div class="mvt-method-label">To provision</div></div>';
+      html += '</div>';
+
+      /* Primary repo */
+      var pr = TF.primaryRepo;
+      html += '<div class="mvt-tf-repo-primary">';
+      html += '<div class="mvt-tf-repo-name">' + pr.name + '</div>';
+      html += '<div class="mvt-tf-repo-meta">' + pr.tool + ' &middot; Environments: ' + pr.environments.join(', ') + ' &middot; ' + pr.structure + '</div>';
+      html += '</div>';
+
+      /* Modules table */
+      html += '<h4 class="mvt-tf-sub">Available Modules</h4>';
+      html += '<div class="mvt-tf-modules">';
+      TF.modulesAvailable.forEach(function(m) {
+        html += '<div class="mvt-tf-module' + (m.critical ? ' mvt-tf-module-crit' : '') + '">';
+        html += '<div class="mvt-tf-module-name">' + m.module + (m.critical ? ' <span class="mvt-item-crit">CRITICAL</span>' : '') + '</div>';
+        html += '<div class="mvt-tf-module-detail">' + m.details + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+
+      /* Deployment options */
+      html += '<h4 class="mvt-tf-sub">Deployment Options</h4>';
+      html += '<div class="mvt-tf-options">';
+      TF.deploymentOptions.forEach(function(opt) {
+        var isRecommended = opt.id === 'option_a';
+        html += '<div class="mvt-tf-option' + (isRecommended ? ' mvt-tf-option-rec' : '') + '">';
+        html += '<div class="mvt-tf-option-head">';
+        html += '<div class="mvt-tf-option-name">' + opt.name + '</div>';
+        html += '<div class="mvt-tf-option-effort">' + opt.effort + '</div>';
+        html += '</div>';
+        html += '<ol class="mvt-tf-steps">';
+        opt.steps.forEach(function(s) { html += '<li>' + s + '</li>'; });
+        html += '</ol>';
+        html += '<div class="mvt-tf-proscons">';
+        html += '<div class="mvt-tf-pros"><strong>Pros:</strong> ' + opt.pros.join(' &middot; ') + '</div>';
+        html += '<div class="mvt-tf-cons"><strong>Cons:</strong> ' + opt.cons.join(' &middot; ') + '</div>';
+        html += '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+
+      /* What we need vs don't need */
+      html += '<div class="mvt-tf-needs-grid">';
+      html += '<div class="mvt-tf-needs">';
+      html += '<h4 class="mvt-tf-sub">What We Need</h4>';
+      TF.whatWeNeed.forEach(function(n) {
+        html += '<div class="mvt-tf-need-item' + (n.critical ? ' mvt-tf-need-crit' : '') + '">';
+        html += '<span class="mvt-tf-need-text">' + n.item + '</span>';
+        html += '<span class="mvt-tf-need-from">from ' + n.from + '</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+      html += '<div class="mvt-tf-dontneed">';
+      html += '<h4 class="mvt-tf-sub">What We DON\'T Need</h4>';
+      TF.whatWeDontNeed.forEach(function(n) {
+        html += '<div class="mvt-tf-dontneed-item">' + n + '</div>';
+      });
+      html += '</div>';
+      html += '</div>';
+
+      /* Bottom line */
+      html += '<div class="mvt-tf-bottomline">' + TF.whatThisMeans + '</div>';
+      html += '</div>';
+    }
 
     /* ═══════════════════════════════════════════
        SECTION 3: ROADMAP (Gantt + Dependencies)

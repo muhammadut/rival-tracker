@@ -1558,6 +1558,58 @@ main{flex:1;position:relative;overflow-x:auto;overflow-y:auto;padding:40px 32px 
 .mvt-method-num { font-size:24px; font-weight:800; color:#4f8fff; }
 .mvt-method-label { font-size:11px; color:#8b949e; margin-top:2px; }
 
+/* ── Validation Findings ────────────────────────────── */
+.mvt-validation { background:#161b22; border:1px solid #30363d; border-radius:12px; padding:24px; }
+.mvt-date-badge { font-size:11px; color:#8b949e; background:#21262d; border-radius:4px; padding:2px 8px; margin-left:8px; font-weight:400; vertical-align:middle; }
+.mvt-val-group { margin-top:20px; }
+.mvt-val-heading { font-size:14px; margin:0 0 10px; padding-bottom:6px; border-bottom:1px solid #21262d; }
+.mvt-val-confirmed { color:#f85149; }
+.mvt-val-disproven { color:#3fb950; }
+.mvt-val-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:10px; }
+.mvt-val-card { background:#0d1117; border:1px solid #21262d; border-radius:8px; padding:12px 14px; }
+.mvt-val-card-disproven { border-left:3px solid #3fb950; }
+.mvt-val-card-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.mvt-val-component { font-size:11px; color:#8b949e; background:#21262d; border-radius:3px; padding:1px 6px; }
+.mvt-val-sev { font-size:10px; font-weight:700; letter-spacing:0.5px; }
+.mvt-val-issue { font-size:13px; font-weight:600; color:#e6edf3; margin-bottom:4px; }
+.mvt-val-detail { font-size:12px; color:#8b949e; line-height:1.5; }
+.mvt-val-insight { margin-top:16px; font-size:12px; color:#d29922; background:rgba(210,153,34,.08); border:1px solid rgba(210,153,34,.2); border-radius:8px; padding:10px 14px; line-height:1.5; }
+
+/* ── Terraform / IaC Discovery ──────────────────────── */
+.mvt-terraform { background:#161b22; border:1px solid #30363d; border-radius:12px; padding:24px; }
+.mvt-tf-headline { font-size:16px; font-weight:700; color:#3fb950; margin:8px 0 6px; }
+.mvt-tf-stats { display:flex; gap:12px; margin:16px 0; flex-wrap:wrap; }
+.mvt-tf-time { font-size:15px !important; }
+.mvt-tf-repo-primary { background:#0d1117; border:1px solid #3fb950; border-radius:8px; padding:14px 16px; margin:16px 0; }
+.mvt-tf-repo-name { font-size:15px; font-weight:700; color:#3fb950; }
+.mvt-tf-repo-meta { font-size:12px; color:#8b949e; margin-top:4px; }
+.mvt-tf-sub { font-size:14px; color:#e6edf3; margin:20px 0 10px; }
+.mvt-tf-modules { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:8px; }
+.mvt-tf-module { background:#0d1117; border:1px solid #21262d; border-radius:6px; padding:10px 12px; }
+.mvt-tf-module-crit { border-left:3px solid #4f8fff; }
+.mvt-tf-module-name { font-size:13px; font-weight:600; color:#e6edf3; }
+.mvt-tf-module-detail { font-size:11px; color:#8b949e; margin-top:2px; line-height:1.4; }
+.mvt-tf-options { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:12px; }
+.mvt-tf-option { background:#0d1117; border:1px solid #21262d; border-radius:8px; padding:16px; }
+.mvt-tf-option-rec { border:1px solid #3fb950; }
+.mvt-tf-option-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.mvt-tf-option-name { font-size:14px; font-weight:700; color:#e6edf3; }
+.mvt-tf-option-effort { font-size:12px; color:#4f8fff; font-weight:600; }
+.mvt-tf-steps { font-size:12px; color:#c9d1d9; line-height:1.6; padding-left:20px; margin:0 0 10px; }
+.mvt-tf-steps li { margin-bottom:4px; }
+.mvt-tf-steps code { background:#21262d; padding:1px 5px; border-radius:3px; font-size:11px; }
+.mvt-tf-proscons { font-size:11px; line-height:1.5; }
+.mvt-tf-pros { color:#3fb950; margin-bottom:4px; }
+.mvt-tf-cons { color:#d29922; }
+.mvt-tf-needs-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px; }
+@media (max-width:700px) { .mvt-tf-needs-grid { grid-template-columns:1fr; } }
+.mvt-tf-need-item { font-size:12px; color:#c9d1d9; padding:6px 0; border-bottom:1px solid #21262d; display:flex; justify-content:space-between; gap:8px; }
+.mvt-tf-need-crit .mvt-tf-need-text { color:#e6edf3; font-weight:600; }
+.mvt-tf-need-from { font-size:11px; color:#8b949e; white-space:nowrap; }
+.mvt-tf-dontneed-item { font-size:12px; color:#3fb950; padding:4px 0; }
+.mvt-tf-dontneed-item::before { content:'\\2713 '; }
+.mvt-tf-bottomline { margin-top:20px; background:rgba(63,185,80,.08); border:1px solid rgba(63,185,80,.2); border-radius:8px; padding:14px 16px; font-size:13px; color:#3fb950; line-height:1.6; font-weight:500; }
+
 /* Task Summary (compact list with links) */
 .mvt-phase-summary { background:#161b22; border:1px solid #30363d; border-radius:10px; margin-bottom:12px; overflow:hidden; border-left:3px solid var(--phase-color); }
 .mvt-summary-list { padding:8px 16px 12px; }

@@ -583,5 +583,113 @@ window.SYSTEM_REVIEW_DATA = {
     { label: 'Can run simultaneously', phases: [['phase_0','phase_1'], ['phase_2','phase_3'], ['phase_4']], note: 'Infrastructure, Contracts, and Converter work are independent — assign to different people or work streams' },
     { label: 'Must wait', phases: [['phase_5']], note: 'Integration testing requires Infrastructure and Component Fixes complete. Can use simulator (Tier 1) without CDM-to-CSIO converter.' }
   ],
-  disclaimer: 'This plan is subject to change as we validate infrastructure access and carrier API availability. Tier 1 (Simulator MVP) can demo in 2-3 weeks. Tier 2 (Real Carriers) adds 3-6 weeks depending on CSIO package compatibility and carrier credential lead times.'
+  disclaimer: 'This plan is subject to change as we validate infrastructure access and carrier API availability. Tier 1 (Simulator MVP) can demo in 2-3 weeks. Tier 2 (Real Carriers) adds 3-6 weeks depending on CSIO package compatibility and carrier credential lead times.',
+
+  /* ── Validation Findings (2026-03-29 deep dive) ─────────── */
+  validationFindings: {
+    date: '2026-03-29',
+    summary: 'Deep-dive verification against all 5 critical repos. Every blocker re-checked against actual source code. Two previously claimed issues were disproven; all remaining blockers confirmed still present and unfixed.',
+    confirmed: [
+      { id: 'vf-1', component: 'BFF', issue: 'Thread-safety bug in SetApiKeyHeader', status: 'confirmed', detail: 'QuoteService.cs:77-88 still mutates shared DefaultRequestHeaders. Called 6 times across async operations. HttpClient is singleton via AddHttpClient<QuoteService>().', severity: 'critical' },
+      { id: 'vf-2', component: 'BFF', issue: 'Polly resilience policies commented out', status: 'confirmed', detail: 'Program.cs line 19 — .AddResiliencePolicies() is still commented. Infrastructure exists (PollyPolicyOptions.cs, HttpClientBuilderExtensions.cs) but not wired.', severity: 'high' },
+      { id: 'vf-3', component: 'BFF', issue: 'QuoteManagementApiUrl empty in prod config', status: 'confirmed', detail: 'appsettings.json:35 has empty string. Dev config (appsettings.Development.json) correctly points to localhost:7124. Intentional pattern but requires deployment-time override.', severity: 'medium' },
+      { id: 'vf-4', component: 'QuoteManagement', issue: 'Wrong Service Bus namespace', status: 'confirmed', detail: 'appsettings.json lines 16 & 23 still reference sbns-rating-dev-001. Both AzServiceBus and RatingServiceBus sections are wrong. Orchestrator expects sbns-ratingplatform-dev-001.', severity: 'critical' },
+      { id: 'vf-5', component: 'QuoteManagement', issue: 'Wrong queue names', status: 'confirmed', detail: 'sbq-rating-requests-dev and sbq-rating-responses-dev in all 3 config sections. Orchestrator expects sbq-initial-rating-requests and sbq-rating-responses.', severity: 'critical' },
+      { id: 'vf-6', component: 'QuoteManagement', issue: 'No environment-specific appsettings', status: 'confirmed', detail: 'Only one appsettings.json with hardcoded dev values. No Development, QA, or Production variants.', severity: 'high' },
+      { id: 'vf-7', component: 'Orchestrator → Connector', issue: 'carrierTarget vs carrierContext mismatch', status: 'confirmed', detail: 'Orchestrator sends CarrierTarget object (Models/Messages/CarrierRatingMessage.cs). CarrierConnector reads carrierContext (Models/Messages/RatingRequestMessage.cs with [JsonPropertyName("carrierContext")]). Carrier config silently nulls.', severity: 'critical' },
+      { id: 'vf-8', component: 'Connector → QuoteMgmt', issue: 'Response format mismatch (flat vs nested)', status: 'confirmed', detail: 'CarrierConnector sends flat {carrierId, status, ratingResult}. QuoteManagement expects nested {carrierResult: {carrierId, status, premiumSummary}}. Every response silently fails deserialization.', severity: 'critical' },
+      { id: 'vf-9', component: 'RPM Client', issue: 'CarrierTargets sent as null', status: 'confirmed', detail: 'Quote.razor.cs:726-735 explicitly sets CarrierTargets = null in UpdateQuoteRequest. No carrier selection UI exists.', severity: 'critical' },
+      { id: 'vf-10', component: 'RPM Client', issue: 'No async polling for results', status: 'confirmed', detail: 'Quote.razor.cs:752-766 calls RateQuoteAsync() then immediately GetOffersAsync(). No polling loop, no retry, no wait. Results always empty.', severity: 'critical' },
+      { id: 'vf-11', component: 'RPM Client', issue: 'SQL Server + Azure AD mandatory', status: 'confirmed', detail: 'Program.cs:128-136 requires IdentityDatabase SQL connection. Azure AD is mandatory on all pages via fallback authorization policy. App won\'t start without both.', severity: 'critical' },
+      { id: 'vf-12', component: 'RPM Client', issue: 'CSIO mapping commented out', status: 'confirmed', detail: 'Quote.razor.cs:36-37 has ICsioMappingService injection commented. Lines 705-707 have the MapToAcordAsync call commented. Sends raw CDM instead.', severity: 'medium' },
+      { id: 'vf-13', component: 'CarrierConnector', issue: 'Health check hardcoded', status: 'confirmed', detail: 'RatingHealthCheck.cs: isHealthy = true with no actual dependency checks.', severity: 'low' }
+    ],
+    disproven: [
+      { id: 'vd-1', claim: 'ServiceBusSettings not registered in DI', reality: 'Program.cs has Configure<RatingServiceBusSettings>() and Configure<OpportunitiesServiceBusSettings>() properly registered. Someone (likely Mehul) fixed this. Removed from task list.', impact: 'Saved ~5 min of unnecessary work.' },
+      { id: 'vd-2', claim: 'decimal vs double type mismatch for premiums', reality: 'Both Orchestrator PremiumSummary and CarrierConnector PremiumSummary use decimal for all monetary fields. No mismatch exists in the critical path.', impact: 'Removed false alarm from critical blockers.' }
+    ],
+    newInsight: 'QuoteManagement DI registration uses RatingServiceBusSettings (new class name) rather than the original ServiceBusSettings. The config section mapping should be verified at runtime to ensure the correct class resolves.'
+  },
+
+  /* ── Terraform / IaC Discovery (2026-03-29) ─────────────── */
+  terraformDiscovery: {
+    date: '2026-03-29',
+    headline: 'Full Terraform exists — we can self-provision a sandbox',
+    summary: 'A complete Terraform repository (Rating.Platform.Infrastructure) with modular IaC for every Azure resource the platform needs already exists. This eliminates the dependency on DevOps for infrastructure provisioning.',
+    primaryRepo: {
+      name: 'Rating.Platform.Infrastructure',
+      path: 'knowledge/repos/Rating.Platform.Infrastructure',
+      tool: 'Terraform / OpenTofu',
+      environments: ['dev', 'qa'],
+      structure: 'environments/{env}/main.tf + modules/foundation/ + modules/platform/'
+    },
+    secondaryRepos: [
+      { name: 'Rival.Platform.Infrastructure', tool: 'Bicep', scope: 'Full platform (Journal, Quoting, Customers, etc.)', files: 247 },
+      { name: 'Rival.RQuote.Infrastructure', tool: 'Bicep', scope: 'RQuote system', files: 'Multiple' },
+      { name: 'DevOps.ObservabilityandMonitroingCoralogix', tool: 'Terraform', scope: 'Coralogix monitoring alerts', files: 'Multiple' }
+    ],
+    modulesAvailable: [
+      { module: 'Service Bus', details: 'Namespace + 3 queues (sbq-initial-rating-requests, sbq-rating-jobs, sbq-rating-responses) with correct names', critical: true },
+      { module: 'SQL Server', details: 'Azure SQL with CentralSchema database (S0 SKU)', critical: true },
+      { module: 'Cosmos DB', details: 'MongoDB API 7.0 with RatingRules, RatingLedger, Schema databases and shard keys', critical: true },
+      { module: 'Storage Account', details: 'Rating audit logs container with blob hierarchy', critical: false },
+      { module: 'Key Vault', details: 'RBAC authorization with auto-generated secrets for each Container App', critical: false },
+      { module: 'Container Registry', details: 'ACR (Basic for dev, Standard for qa) with Managed Identity only', critical: true },
+      { module: 'Container App Environment', details: 'Workload profiles, internal load balancer, VNet integration', critical: true },
+      { module: 'Networking', details: 'VNet with Container Apps subnet (10.10.0.0/23), service endpoints for CosmosDB/SQL/Storage/KeyVault', critical: false },
+      { module: 'Log Analytics', details: 'Workspace + App Insights (30-day retention, 2GB daily quota)', critical: false },
+      { module: 'RBAC', details: 'Managed identities with Service Bus Sender/Receiver, Storage Blob Contributor roles', critical: true }
+    ],
+    deploymentOptions: [
+      {
+        id: 'option_a',
+        name: 'Use Existing Terraform (Recommended)',
+        effort: '2-4 hours',
+        steps: [
+          'Clone Rating.Platform.Infrastructure',
+          'Create environments/sandbox/ config pointing to your subscription',
+          'az login && terraform init && terraform plan && terraform apply',
+          'All resources provisioned with correct names, RBAC, and networking'
+        ],
+        pros: ['Repeatable', 'All naming conventions match', 'RBAC pre-configured', 'Tested by DevOps team'],
+        cons: ['Need Terraform/OpenTofu installed', 'May need state backend setup']
+      },
+      {
+        id: 'option_b',
+        name: 'Azure CLI Manual Provisioning (Fastest)',
+        effort: '1-2 hours',
+        steps: [
+          'az group create -n rg-ratingplatform-sandbox-001 -l canadacentral',
+          'az servicebus namespace create + 3 queue creates',
+          'az cosmosdb create --kind MongoDB --server-version 7.0',
+          'az sql server create + az sql db create',
+          'az storage account create + az acr create'
+        ],
+        pros: ['No Terraform knowledge needed', 'Fast for sandbox', 'Direct control'],
+        cons: ['Not repeatable', 'Must manually match naming conventions', 'No RBAC automation']
+      }
+    ],
+    whatThisMeans: 'The DevOps dependency — previously the biggest risk — is eliminated. With Azure subscription access and the existing Terraform, we can provision a complete sandbox in hours, not weeks. The IaC has already been reviewed and applied to dev/qa environments.',
+    whatWeNeed: [
+      { item: 'Azure subscription with Contributor access', from: 'Management / Deji', critical: true },
+      { item: 'Push access to 5 repos (BFF, QuoteManagement, Orchestrator, CarrierConnector, RPM Client)', from: 'Management', critical: true },
+      { item: 'NuGet PAT for private Rival feed', from: 'DevOps', critical: true },
+      { item: 'Azure AD app registration (or permission to create one)', from: 'Management / Deji', critical: true },
+      { item: '2-3 weeks calendar time', from: 'Management', critical: true }
+    ],
+    whatWeDontNeed: [
+      'Full Skunk Works team — code fixes are 8-10 hours of focused work',
+      'DevOps to provision infrastructure — Terraform is already written',
+      'Real carrier credentials for Tier 1 — simulator mode works',
+      'APIM gateway for MVP — BFF calls QuoteManagement directly'
+    ],
+    stats: {
+      terraformFiles: 176,
+      bicepFiles: 247,
+      dockerfiles: 56,
+      iacRepos: 6,
+      modulesReady: 10,
+      estimatedProvisionTime: '2-4 hours with Terraform'
+    }
+  }
 };
