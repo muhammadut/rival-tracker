@@ -163,12 +163,12 @@ window.MVP_V2_DATA = {
       problems: [
         {
           id: "sb-1",
-          title: "Namespace may not exist in dev",
-          severity: "critical",
-          description: "Terraform defines it but we haven't verified it was applied. If the namespace doesn't exist, all Service Bus communication fails.",
-          fix: "Verify in Azure Portal or az CLI. Create if missing.",
+          title: "Namespace exists — verify queues are created",
+          severity: "medium",
+          description: "sbns-ratingplatform-dev-001 is provisioned in rg-ratingplatform-dev-001. Need to verify the 3 queues exist: sbq-initial-rating-requests, sbq-rating-jobs, sbq-rating-responses.",
+          fix: "az servicebus queue list --namespace-name sbns-ratingplatform-dev-001 --resource-group rg-ratingplatform-dev-001. Create any missing queues.",
           claude_can_do: "no",
-          claude_detail: "Requires Azure Portal or CLI access."
+          claude_detail: "Requires Azure CLI or Portal access to verify/create queues."
         },
         {
           id: "sb-2",
@@ -245,12 +245,12 @@ window.MVP_V2_DATA = {
         },
         {
           id: "qm-6",
-          title: "Missing MongoDB connection string",
-          severity: "critical",
-          description: "No MongoDB/Cosmos DB provisioned in dev. QuoteManagement crashes at startup.",
-          fix: "Provision Cosmos DB or run local MongoDB. Add connection string to config.",
+          title: "Cosmos DB provisioned — connection string not configured",
+          severity: "high",
+          description: "cosdb-quotemanagement-dev-001 is provisioned in rg-quotemanagement-dev-001 (RPM subscription). Connection string needs to be added to QuoteManagement appsettings.json and collections (quoteWip) need creation.",
+          fix: "Get connection string from Azure Portal for cosdb-quotemanagement-dev-001. Add to appsettings.json MongoDB section. Create quoteWip collection.",
           claude_can_do: "partially",
-          claude_detail: "Claude can add config. Provisioning requires Azure/Docker access."
+          claude_detail: "Claude can update appsettings.json once connection string is provided. Collection creation requires Azure CLI or Portal."
         },
         {
           id: "qm-7",
@@ -362,9 +362,9 @@ window.MVP_V2_DATA = {
   ],
 
   prerequisites: [
-    { id: "prereq-sb", name: "Service Bus Namespace", status: "unverified", resource: "sbns-ratingplatform-dev-001" },
-    { id: "prereq-mongo", name: "MongoDB / Cosmos DB", status: "missing-in-dev", resource: "cosdb-ratingplatform-dev-001" },
-    { id: "prereq-sql", name: "SQL Server (Identity)", status: "missing-in-dev", resource: "sqlsrv-ratingplatform-dev-001" },
+    { id: "prereq-sb", name: "Service Bus Namespace", status: "provisioned", resource: "sbns-ratingplatform-dev-001 (rg-ratingplatform-dev-001)" },
+    { id: "prereq-mongo", name: "MongoDB / Cosmos DB", status: "provisioned", resource: "cosdb-quotemanagement-dev-001 (rg-quotemanagement-dev-001)" },
+    { id: "prereq-sql", name: "SQL Server (Identity)", status: "provisioned", resource: "sqlsrv-ratingplatform-dev-001" },
     { id: "prereq-ad", name: "Azure AD App Registration", status: "unverified", resource: "ClientId: 51a0183f-..." },
     { id: "prereq-acr", name: "Container Registry", status: "provisioned", resource: "acrratingplatformdev001" },
     { id: "prereq-keyvault", name: "Key Vault", status: "provisioned", resource: "kvratingplatformdev001" }

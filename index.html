@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rival Rating Platform - Architecture Explorer</title>
-<link rel="stylesheet" href="styles.css?v=20260330b">
+<link rel="stylesheet" href="styles.css?v=20260330c">
 <!-- CSS extracted to styles.css -->
 </head>
 <body>
@@ -154,12 +154,12 @@ if (isLocal || sessionStorage.getItem('archex-auth') === 'true') {
   <div id="term-tooltip" class="term-tooltip"></div>
 </div>
 
-<script src="actionplan-data.js?v=20260330b"></script>
-<script src="mvp-v2-data.js?v=20260330b"></script>
-<script src="insights-data.js?v=20260330b"></script>
-<script src="system-review-data.js?v=20260330b"></script>
-<script src="task-details-data.js?v=20260330b"></script>
-<script src="data.js?v=20260330b"></script>
+<script src="actionplan-data.js?v=20260330c"></script>
+<script src="mvp-v2-data.js?v=20260330c"></script>
+<script src="insights-data.js?v=20260330c"></script>
+<script src="system-review-data.js?v=20260330c"></script>
+<script src="task-details-data.js?v=20260330c"></script>
+<script src="data.js?v=20260330c"></script>
 <script>
 /* -- GLOSSARY & Tooltip System ------------------ */
 var GLOSSARY = {
@@ -554,9 +554,10 @@ window.dismissOnboarding = function() {
         'Synapse + Data Factory': '\uD83D\uDCCA'
       };
       var azIcon = azIcons[meta.azure.resource] || '\u2601';
-      azureTagHtml = '<div class="card-azure-tag" title="' + esc(meta.azure.name) + ' (' + esc(meta.azure.sku) + ')">' +
+      azureTagHtml = '<div class="card-azure-tag" title="SKU: ' + esc(meta.azure.sku) + ' | Region: ' + esc(meta.azure.region) + '">' +
         '<span class="azure-icon">' + azIcon + '</span>' +
         '<span class="azure-label">' + esc(meta.azure.resource) + '</span>' +
+        '<span class="azure-name">' + esc(meta.azure.name) + '</span>' +
         '</div>';
     }
 
@@ -2133,7 +2134,7 @@ window.dismissOnboarding = function() {
     html += '<div class="mvt-method-card"><div class="mvt-method-num">2</div><div class="mvt-method-label">False claims removed</div></div>';
     html += '<div class="mvt-method-card"><div class="mvt-method-num">176</div><div class="mvt-method-label">Terraform files found</div></div>';
     html += '</div>';
-    html += '<p class="mvt-method-text" style="margin-top:12px">Two claims from earlier analysis were disproven and removed: (1) decimal vs double type mismatch — both services use decimal, no mismatch exists; (2) ServiceBusSettings not registered in DI — it is registered under a different class name. A second deep dive on 2026-03-29 re-verified all 13 remaining blockers against live source code and discovered 176 Terraform files + 247 Bicep files across 6 IaC repos — eliminating the DevOps dependency for infrastructure provisioning.</p>';
+    html += '<p class="mvt-method-text" style="margin-top:12px">Two claims from earlier analysis were disproven and removed: (1) decimal vs double type mismatch — both services use decimal, no mismatch exists; (2) ServiceBusSettings not registered in DI — it is registered under a different class name. A deep dive on 2026-03-30 verified all Azure resources across 2 subscriptions: 19+ resources are live including Service Bus, Cosmos DB, SQL Server, APIM, Key Vault, ACR, 5 Container Apps, and full networking. Infrastructure is not a blocker — only config fixes and redeployment remain.</p>';
     html += '<div class="mvt-disclaimer">' + (SR.disclaimer || '') + '</div>';
     html += '</div>';
 
@@ -2393,8 +2394,8 @@ window.dismissOnboarding = function() {
     var flowSteps = [
       { id: 'rpm_client', label: 'RPM Client', sub: 'Blazor Frontend', status: 'warn', fixes: ['CarrierTargets = null', 'No async polling'] },
       { id: 'bff', label: 'Web BFF', sub: 'API Proxy', status: 'broken', fixes: ['Empty API URL', 'Thread-safety bug'] },
-      { id: 'quote_mgmt', label: 'Quote Mgmt', sub: 'CRUD + Queue Publish', status: 'broken', fixes: ['Wrong SB namespace', 'Wrong queue names', 'DI not registered'] },
-      { id: 'service_bus', label: 'Service Bus', sub: '3 Queues', status: 'broken', fixes: ['Not provisioned', 'Queue name mismatch'] },
+      { id: 'quote_mgmt', label: 'Quote Mgmt', sub: 'CRUD + Queue Publish', status: 'broken', fixes: ['Wrong SB namespace', 'Wrong queue names'] },
+      { id: 'service_bus', label: 'Service Bus', sub: '3 Queues', status: 'warn', fixes: ['Namespace exists', 'Verify queues created'] },
       { id: 'orchestrator', label: 'Orchestrator', sub: 'Fan-out', status: 'warn', fixes: ['carrierTarget vs carrierContext'] },
       { id: 'carrier_connector', label: 'Carrier Connector', sub: 'CDM → XML → API', status: 'broken', fixes: ['No CDM→CSIO converter', 'No response parser'] },
       { id: 'carriers', label: 'Carriers', sub: 'Aviva / Peace Hills', status: 'warn', fixes: ['Need sandbox creds', 'IP whitelisting'] }

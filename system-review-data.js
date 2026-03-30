@@ -25,20 +25,20 @@ window.SYSTEM_REVIEW_DATA = {
       subtitle: 'Get the keys to the building',
       color: '#a371f7',
       icon: '🔑',
-      status: 'not_started',
+      status: 'in_progress',
       description: 'Before any code runs, we need Azure subscriptions with the right services provisioned and permissions granted.',
       owner: 'Tariq → Deji (DevOps)',
-      effort: '1-2 days (plus approval wait time)',
+      effort: '1-2 days (60% complete — infrastructure provisioned)',
       items: [
-        { id: 'p0_1', text: 'Request sandbox Azure subscription with: Container Apps, Service Bus, Cosmos DB (MongoDB API), SQL Server, Key Vault, Blob Storage, APIM, App Insights', status: 'not_started', critical: true },
-        { id: 'p0_2', text: 'Request dev subscription (mirrors sandbox but team-accessible)', status: 'not_started', critical: true },
+        { id: 'p0_1', text: 'Request sandbox Azure subscription with: Container Apps, Service Bus, Cosmos DB (MongoDB API), SQL Server, Key Vault, Blob Storage, APIM, App Insights ✓ sub-rival-development-ratingplatform-test-001 exists', status: 'complete', critical: true },
+        { id: 'p0_2', text: 'Request dev subscription (mirrors sandbox but team-accessible) ✓ sub-rival-development-rpm-test-001 exists', status: 'complete', critical: true },
         { id: 'p0_3', text: 'Request prod subscription (locked down, deployment-only access)', status: 'not_started', critical: false },
         { id: 'p0_4', text: 'Verify Azure AD app registration: ClientSecret exists, redirect URIs include dev/local URLs', status: 'not_started', critical: true },
-        { id: 'p0_5', text: 'Provision Service Bus namespace: sbns-ratingplatform-{env}-001', status: 'not_started', critical: true },
-        { id: 'p0_6', text: 'Create Service Bus queues programmatically via Bicep: sbq-rating-requests, sbq-rating-jobs, sbq-rating-responses', status: 'not_started', critical: true },
-        { id: 'p0_7', text: 'Provision Cosmos DB account with MongoDB API for Quote Management', status: 'not_started', critical: true },
-        { id: 'p0_8', text: 'Provision SQL Server for ASP.NET Identity (RPM Client requirement)', status: 'not_started', critical: true },
-        { id: 'p0_9', text: 'Provision Key Vault for carrier OAuth2 credentials and connection strings', status: 'not_started', critical: false },
+        { id: 'p0_5', text: 'Provision Service Bus namespace: sbns-ratingplatform-{env}-001 ✓ sbns-ratingplatform-dev-001 exists', status: 'complete', critical: true },
+        { id: 'p0_6', text: 'Create Service Bus queues: sbq-initial-rating-requests, sbq-rating-jobs, sbq-rating-responses (namespace sbns-ratingplatform-dev-001 exists)', status: 'in_progress', critical: true },
+        { id: 'p0_7', text: 'Provision Cosmos DB account with MongoDB API for Quote Management ✓ cosdb-quotemanagement-dev-001 exists', status: 'complete', critical: true },
+        { id: 'p0_8', text: 'Provision SQL Server for ASP.NET Identity (RPM Client requirement) ✓ sqlsrv-ratingplatform-dev-001 + CentralSchema DB exists', status: 'complete', critical: true },
+        { id: 'p0_9', text: 'Provision Key Vault for carrier OAuth2 credentials and connection strings ✓ kvratingplatformdev001 exists', status: 'complete', critical: false },
         { id: 'p0_10', text: 'Run EF migrations for ASP.NET Identity schema on SQL Server', status: 'not_started', critical: true },
         { id: 'p0_11', text: 'Seed demo user(s) in AspNetUsers table with email and roles', status: 'not_started', critical: true },
         { id: 'p0_12', text: 'Hold kickoff meeting: decide contract fix direction, response path, carrier target strategy', status: 'not_started', critical: true },
@@ -248,24 +248,24 @@ window.SYSTEM_REVIEW_DATA = {
 
     service_bus: {
       name: 'Azure Service Bus',
-      readiness: 'not_started',
-      score: 0,
+      readiness: 'partial',
+      score: 50,
       role: 'Message queue infrastructure. Three queues: sbq-rating-requests (QuoteManagement → Orchestrator), sbq-rating-jobs (Orchestrator → CarrierConnector), sbq-rating-responses (CarrierConnector → QuoteManagement).',
       businessLogicLines: 'N/A — infrastructure service, no application code',
       verdict: 'The right technology for this problem. Needs to be provisioned with correct queue names, and ideally created via Bicep so it is repeatable across environments.',
       criteria: [
-        { principle: 'deployable', status: 'fail', note: 'Not provisioned yet — no Bicep template for Rating Platform queues' },
+        { principle: 'deployable', status: 'pass', note: 'Namespace sbns-ratingplatform-dev-001 provisioned in Canada Central. Queues need verification/creation.' },
         { principle: 'contract_aligned', status: 'fail', note: 'Queue names are hardcoded differently in each service' },
         { principle: 'scalable', status: 'pass', note: 'Azure Service Bus scales to millions of messages/day' },
         { principle: 'observable', status: 'warn', note: 'Basic monitoring available but no custom alerts configured' },
         { principle: 'resilient', status: 'pass', note: 'Built-in dead-letter queues, message retry, and lock renewal' },
         { principle: 'secure', status: 'warn', note: 'Needs Managed Identity RBAC roles (Data Sender, Data Receiver)' },
         { principle: 'tested', status: 'fail', note: 'Cannot test until provisioned' },
-        { principle: 'config_correct', status: 'fail', note: 'Namespace and queue names do not match between services' }
+        { principle: 'config_correct', status: 'warn', note: 'Namespace exists. Queue names still mismatched between services.' }
       ],
       dataStores: [],
       keyIssues: [
-        { severity: 'critical', issue: 'Not provisioned', detail: 'The Service Bus namespace sbns-ratingplatform-dev-001 does not exist yet. Must be created before any messages can flow.' },
+        { severity: 'warning', issue: 'Namespace provisioned, queues need verification', detail: 'sbns-ratingplatform-dev-001 exists in rg-ratingplatform-dev-001. Need to verify/create 3 queues: sbq-initial-rating-requests, sbq-rating-jobs, sbq-rating-responses.' },
         { severity: 'critical', issue: 'Queue name disagreement', detail: 'QuoteManagement uses sbq-rating-requests-dev, Orchestrator uses sbq-initial-rating-requests. The shared contracts package will define the canonical names.' },
         { severity: 'warning', issue: 'No Bicep template', detail: 'Queues should be created programmatically so dev/qa/prod environments are identical.' }
       ]
@@ -352,37 +352,37 @@ window.SYSTEM_REVIEW_DATA = {
 
     cosmos_db: {
       name: 'Cosmos DB (MongoDB API)',
-      readiness: 'not_started',
-      score: 10,
+      readiness: 'partial',
+      score: 60,
       role: 'Document database for quote records and schema bundles. Uses MongoDB API compatibility layer so services use standard MongoDB drivers.',
       businessLogicLines: 'N/A — infrastructure service',
       verdict: 'Good technology choice for this use case. Quote data is document-shaped (varying fields per carrier/province), and Cosmos DB provides global distribution and automatic scaling. MongoDB API means standard drivers work without lock-in. Must be provisioned.',
       criteria: [
-        { principle: 'deployable', status: 'fail', note: 'Not provisioned for Rating Platform' },
+        { principle: 'deployable', status: 'pass', note: 'cosdb-quotemanagement-dev-001 provisioned for Quote Management. cosdb-platformcommon-dev-001 for platform.' },
         { principle: 'contract_aligned', status: 'pass', note: 'N/A — stores whatever services send it' },
         { principle: 'scalable', status: 'pass', note: 'Cosmos DB auto-scales with provisioned throughput (RU/s)' },
         { principle: 'observable', status: 'warn', note: 'Azure Monitor metrics available but no custom alerts' },
         { principle: 'resilient', status: 'pass', note: 'Built-in replication, automatic failover, point-in-time backup' },
         { principle: 'secure', status: 'warn', note: 'Needs Managed Identity access + network restrictions' },
         { principle: 'tested', status: 'fail', note: 'Cannot test until provisioned' },
-        { principle: 'config_correct', status: 'fail', note: 'Connection strings are empty across all services' }
+        { principle: 'config_correct', status: 'warn', note: 'Accounts provisioned. Connection strings need to be added to service configs.' }
       ],
       dataStores: [],
       keyIssues: [
-        { severity: 'critical', issue: 'Not provisioned', detail: 'Cosmos DB account for Rating Platform does not exist. Must be created with MongoDB API enabled.' },
+        { severity: 'info', issue: 'Provisioned — needs collection seeding', detail: 'Cosmos DB accounts cosdb-quotemanagement-dev-001 (dev, qa, demo) provisioned. Remaining: create quoteWip collection and seed Alberta PersAuto schema bundle.' },
         { severity: 'warning', issue: 'RU/s budgeting needed', detail: 'Cosmos DB charges per request unit. Need to estimate throughput for quoting volume.' }
       ]
     },
 
     blob_storage: {
       name: 'Azure Blob Storage',
-      readiness: 'not_started',
-      score: 10,
+      readiness: 'partial',
+      score: 55,
       role: 'Archives raw carrier request/response XML for audit trail and debugging.',
       businessLogicLines: 'N/A — infrastructure service',
       verdict: 'Simple, correct use of blob storage. Best-effort write pattern (non-blocking) means storage failures do not break the rating flow. Low priority for MVP but needed for production debugging.',
       criteria: [
-        { principle: 'deployable', status: 'fail', note: 'Not provisioned' },
+        { principle: 'deployable', status: 'pass', note: 'Storage account strvlratingplatformdev1 provisioned.' },
         { principle: 'contract_aligned', status: 'pass', note: 'N/A' },
         { principle: 'scalable', status: 'pass', note: 'Effectively unlimited' },
         { principle: 'observable', status: 'pass', note: 'Azure Monitor + diagnostic logs available' },
@@ -393,19 +393,19 @@ window.SYSTEM_REVIEW_DATA = {
       ],
       dataStores: [],
       keyIssues: [
-        { severity: 'warning', issue: 'Not provisioned', detail: 'Storage account for carrier responses needs creation. Low priority — system works without it.' }
+        { severity: 'info', issue: 'Not provisioned', detail: 'Storage account strvlratingplatformdev1 PROVISIONED. Remaining: create rating-audit-logs container.' }
       ]
     },
 
     key_vault: {
       name: 'Azure Key Vault',
-      readiness: 'not_started',
-      score: 10,
+      readiness: 'partial',
+      score: 65,
       role: 'Stores secrets: carrier OAuth2 credentials, database connection strings, APIM keys.',
       businessLogicLines: 'N/A — infrastructure service',
       verdict: 'Essential for production. All carrier API credentials should come from Key Vault, not appsettings.json. For dev/sandbox, connection strings in config are acceptable temporarily.',
       criteria: [
-        { principle: 'deployable', status: 'fail', note: 'Not provisioned for Rating Platform' },
+        { principle: 'deployable', status: 'pass', note: 'kvratingplatformdev001 provisioned with RBAC authorization.' },
         { principle: 'contract_aligned', status: 'pass', note: 'N/A' },
         { principle: 'scalable', status: 'pass', note: 'Azure managed service' },
         { principle: 'observable', status: 'pass', note: 'Audit logging built-in' },
@@ -416,19 +416,19 @@ window.SYSTEM_REVIEW_DATA = {
       ],
       dataStores: [],
       keyIssues: [
-        { severity: 'warning', issue: 'Not provisioned', detail: 'Key Vault needs creation. For sandbox, can use appsettings.json temporarily. For prod, must use Key Vault references.' }
+        { severity: 'info', issue: 'Not provisioned', detail: 'Key Vault kvratingplatformdev001 PROVISIONED. Remaining: populate with carrier OAuth2 credentials and connection strings.' }
       ]
     },
 
     apim: {
       name: 'API Management (APIM)',
-      readiness: 'not_started',
-      score: 5,
+      readiness: 'partial',
+      score: 40,
       role: 'API gateway that sits in front of backend services. Handles rate limiting, authentication, request routing, and API key management.',
       businessLogicLines: 'N/A — infrastructure service',
       verdict: 'The BFF currently does what APIM should do (add auth headers, proxy requests). For MVP, the BFF can substitute. For production, APIM provides rate limiting, analytics, and developer portal that the BFF cannot.',
       criteria: [
-        { principle: 'deployable', status: 'fail', note: 'Not provisioned for Rating Platform APIs' },
+        { principle: 'deployable', status: 'pass', note: 'apim-ratingplatform-dev-001 provisioned. API definitions need registration.' },
         { principle: 'contract_aligned', status: 'pass', note: 'N/A' },
         { principle: 'scalable', status: 'pass', note: 'Azure managed with auto-scaling tiers' },
         { principle: 'observable', status: 'pass', note: 'Built-in analytics and logging' },
@@ -439,7 +439,7 @@ window.SYSTEM_REVIEW_DATA = {
       ],
       dataStores: [],
       keyIssues: [
-        { severity: 'info', issue: 'Not needed for MVP', detail: 'BFF substitutes for APIM in MVP. APIM should be provisioned for production with proper API policies.' }
+        { severity: 'info', issue: 'Not needed for MVP', detail: 'APIM apim-ratingplatform-dev-001 is now PROVISIONED. BFF substitutes for MVP, but APIM configuration (API policies, subscriptions) still needed for production.' }
       ]
     },
 
@@ -519,7 +519,7 @@ window.SYSTEM_REVIEW_DATA = {
 
   /* ── Architecture Review Summary ─────────────────────────── */
   architectureVerdict: {
-    overallScore: 35,
+    overallScore: 48,
     headline: 'Solid foundation, broken connections',
     summary: 'The architecture pattern (queue-based async with carrier adapters) is correct for insurance quoting. The implementation has strong individual components — especially the Carrier Connector with its adapter pattern, resilience policies, and telemetry. However, the services cannot communicate due to contract drift (4 copies of CdmData, property name mismatches, response structure disagreements) and configuration mismatches (wrong Service Bus namespaces, empty URLs). The shared contracts package is the highest-leverage fix.',
     strengths: [
@@ -528,7 +528,8 @@ window.SYSTEM_REVIEW_DATA = {
       'Resilience policies (Polly retry, circuit breaker, timeout) are production-grade',
       'OpenTelemetry tracing allows end-to-end request tracking',
       'CDM dynamic field strategy handles varying carrier requirements',
-      'Schema-driven forms enable adding carriers without code changes'
+      'Schema-driven forms enable adding carriers without code changes',
+      'Infrastructure fully provisioned via Terraform across 2 Azure subscriptions (19+ resources live)'
     ],
     weaknesses: [
       'Contract drift: 4 copies of CdmData with no shared package — property names diverge (carrierTarget vs carrierContext)',
@@ -536,7 +537,7 @@ window.SYSTEM_REVIEW_DATA = {
       'Response structure mismatch: flat vs nested means prices never reach frontend',
       'Zero CI/CD pipelines for Rating Platform services',
       'CDM-to-CSIO converter does not exist (adapters have nothing to send)',
-      'Infrastructure not provisioned (Service Bus, Cosmos DB, Key Vault)',
+      'Infrastructure provisioned but not fully configured (queues not created, collections not seeded, secrets not populated)',
       'No shared contracts package — each service maintains its own copies'
     ]
   },
@@ -614,8 +615,8 @@ window.SYSTEM_REVIEW_DATA = {
   /* ── Terraform / IaC Discovery (2026-03-29) ─────────────── */
   terraformDiscovery: {
     date: '2026-03-29',
-    headline: 'Full Terraform exists — we can self-provision a sandbox',
-    summary: 'A complete Terraform repository (Rating.Platform.Infrastructure) with modular IaC for every Azure resource the platform needs already exists. This eliminates the dependency on DevOps for infrastructure provisioning.',
+    headline: 'Infrastructure already provisioned — Terraform successfully applied',
+    summary: 'The Rating.Platform.Infrastructure Terraform has been applied to dev. All core Azure resources are live across two subscriptions: Service Bus, Cosmos DB, SQL Server, Key Vault, ACR, Storage, APIM, Container Apps, networking, and observability. The infrastructure blocker is eliminated.',
     primaryRepo: {
       name: 'Rating.Platform.Infrastructure',
       path: 'knowledge/repos/Rating.Platform.Infrastructure',
@@ -669,7 +670,7 @@ window.SYSTEM_REVIEW_DATA = {
         cons: ['Not repeatable', 'Must manually match naming conventions', 'No RBAC automation']
       }
     ],
-    whatThisMeans: 'The DevOps dependency — previously the biggest risk — is eliminated. With Azure subscription access and the existing Terraform, we can provision a complete sandbox in hours, not weeks. The IaC has already been reviewed and applied to dev/qa environments.',
+    whatThisMeans: 'The infrastructure is live. Service Bus (sbns-ratingplatform-dev-001), Cosmos DB (cosdb-quotemanagement-dev-001), SQL Server (sqlsrv-ratingplatform-dev-001), APIM (apim-ratingplatform-dev-001), Key Vault, Storage, ACR, 3 Container Apps, VNet, and monitoring are all provisioned. We only need config fixes and redeployment.',
     whatWeNeed: [
       { item: 'Azure subscription with Contributor access', from: 'Management / Deji', critical: true },
       { item: 'Push access to 5 repos (BFF, QuoteManagement, Orchestrator, CarrierConnector, RPM Client)', from: 'Management', critical: true },
@@ -679,7 +680,7 @@ window.SYSTEM_REVIEW_DATA = {
     ],
     whatWeDontNeed: [
       'Full Skunk Works team — code fixes are 8-10 hours of focused work',
-      'DevOps to provision infrastructure — Terraform is already written',
+      'DevOps to provision infrastructure — already provisioned across 2 subscriptions (19+ resources)',
       'Real carrier credentials for Tier 1 — simulator mode works',
       'APIM gateway for MVP — BFF calls QuoteManagement directly'
     ],

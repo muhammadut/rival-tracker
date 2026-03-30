@@ -233,7 +233,7 @@ window.ARCH_DATA = {
       repo: 'Rival.Platform.Web',
       repoUrl: 'https://dev.azure.com/rivalitinc/Rival%20Insurance%20Technology/_git/Rival.Platform.Web',
       tech: ['Blazor WASM', '.NET 8', 'MudBlazor', 'MSAL.js'],
-      azure: { resource: 'Container App', name: 'ca-rpmclient-{env}-001', sku: 'Consumption', region: 'Canada Central' },
+      azure: { resource: 'Container App', name: 'ca-rpmclient-dev-001', sku: 'Consumption', region: 'Canada Central' },
       endpoints: [],
       owner: 'Luke Ahrens-Townsend',
       team: 'RPM Platform Team',
@@ -246,7 +246,7 @@ window.ARCH_DATA = {
       repo: 'Rival.Platform.BFF',
       repoUrl: 'https://dev.azure.com/rivalitinc/Rival%20Insurance%20Technology/_git/Rival.Platform.BFF',
       tech: ['.NET 8', 'ASP.NET Core', 'YARP Reverse Proxy', 'Azure AD B2C'],
-      azure: { resource: 'Container App', name: 'ca-webbff-{env}-001', sku: 'Consumption', region: 'Canada Central' },
+      azure: { resource: 'Container App', name: 'ca-platformwebbff-dev-002', sku: 'Consumption', region: 'Canada Central' },
       endpoints: [
         'GET/POST /api/quotes/* (proxied to Quote Management)',
         'GET /api/config (proxied to Platform Config)',
@@ -263,7 +263,7 @@ window.ARCH_DATA = {
       repo: 'Rival.Quoting.API.QuoteManagement',
       repoUrl: 'https://dev.azure.com/rivalitinc/Rival%20Insurance%20Technology/_git/Rival.Quoting.API.QuoteManagement',
       tech: ['.NET 8', 'ASP.NET Core', 'MongoDB Driver', 'Azure.Messaging.ServiceBus', 'MediatR'],
-      azure: { resource: 'Container App', name: 'ca-quotemgmt-{env}-001', sku: 'Consumption', region: 'Canada Central' },
+      azure: { resource: 'Container App', name: 'ca-quotemanagement-dev-002', sku: 'Consumption', region: 'Canada Central' },
       endpoints: [
         'POST /api/quotes - Create a new quote',
         'GET /api/quotes/{id} - Retrieve quote by ID',
@@ -282,7 +282,7 @@ window.ARCH_DATA = {
       repo: 'Rival.Platform.API.Configuration',
       repoUrl: 'https://dev.azure.com/rivalitinc/Rival%20Insurance%20Technology/_git/Rival.Platform.API.Configuration',
       tech: ['.NET 8', 'ASP.NET Core', 'Azure App Configuration'],
-      azure: { resource: 'Container App', name: 'ca-platformconfig-{env}-001', sku: 'Consumption', region: 'Canada Central' },
+      azure: { resource: 'Container App', name: 'ca-platformconfig-dev-001', sku: 'Consumption', region: 'Canada Central' },
       endpoints: [
         'GET /api/config - Retrieve platform configuration',
         'GET /api/config/features - Feature flags'
@@ -298,7 +298,7 @@ window.ARCH_DATA = {
       repo: null,
       repoUrl: null,
       tech: ['Azure API Management'],
-      azure: { resource: 'API Management', name: 'apim-rating-{env}-001', sku: 'Developer', region: 'Canada Central' },
+      azure: { resource: 'API Management', name: 'apim-ratingplatform-dev-001', sku: 'Developer', region: 'Canada Central' },
       endpoints: [],
       owner: 'DevOps (Philip West)',
       team: 'DevOps',
@@ -311,7 +311,7 @@ window.ARCH_DATA = {
       repo: null,
       repoUrl: null,
       tech: ['Azure Service Bus', 'Standard Tier'],
-      azure: { resource: 'Service Bus', name: 'sbns-ratingplatform-{env}-001', sku: 'Standard', region: 'Canada Central' },
+      azure: { resource: 'Service Bus', name: 'sbns-ratingplatform-dev-001', sku: 'Standard', region: 'Canada Central' },
       endpoints: [],
       owner: 'Philip West',
       team: 'DevOps',
@@ -329,7 +329,7 @@ window.ARCH_DATA = {
       repo: 'Rival.Rating.API.RatingOrchestrator',
       repoUrl: 'https://dev.azure.com/rivalitinc/Rival%20Insurance%20Technology/_git/Rival.Rating.API.RatingOrchestrator',
       tech: ['.NET 8', 'Worker Service', 'Azure.Messaging.ServiceBus', 'Azure.Storage.Blobs', 'Docker'],
-      azure: { resource: 'Container App', name: 'ca-ratingorchestrator-{env}-001', sku: 'Consumption', region: 'Canada Central' },
+      azure: { resource: 'Container App', name: 'ca-ratingorchestrator-dev-001', sku: 'Consumption', region: 'Canada Central' },
       endpoints: [
         'Health: /health',
         'No HTTP API endpoints - consumes Service Bus messages'
@@ -345,7 +345,7 @@ window.ARCH_DATA = {
       repo: 'Rival.Rating.API.CarrierConnector',
       repoUrl: 'https://dev.azure.com/rivalitinc/Rival%20Insurance%20Technology/_git/Rival.Rating.API.CarrierConnector',
       tech: ['.NET 8', 'Worker Service', 'FluentValidation', 'Azure.Messaging.ServiceBus', 'Azure.Storage.Blobs', 'Docker', 'CSIO XML 1.48'],
-      azure: { resource: 'Container App', name: 'ca-carrierconnector-{env}-001', sku: 'Consumption', region: 'Canada Central' },
+      azure: { resource: 'Container App', name: 'ca-carrierconnector-dev-001', sku: 'Consumption', region: 'Canada Central' },
       endpoints: [
         'Health: /health',
         'No HTTP API endpoints - consumes Service Bus messages'
@@ -361,7 +361,7 @@ window.ARCH_DATA = {
       repo: 'Rival.Rating.API.Manufacture',
       repoUrl: 'https://dev.azure.com/rivalitinc/Rival%20Insurance%20Technology/_git/Rival.Rating.API.Manufacture',
       tech: ['.NET 8 (scaffolding only)', 'Terraform'],
-      azure: { resource: 'Container App', name: 'ca-manufacturedrating-{env}-001', sku: 'Consumption', region: 'Canada Central' },
+      azure: { resource: 'Container App', name: 'ca-manufacturedrating-dev-001', sku: 'Consumption', region: 'Canada Central' },
       endpoints: [],
       owner: 'Nobody',
       team: 'Unassigned',
@@ -374,7 +374,7 @@ window.ARCH_DATA = {
       repo: 'Rival.Quoting.API.SchemaCache',
       repoUrl: 'https://dev.azure.com/rivalitinc/Rival%20Insurance%20Technology/_git/Rival.Quoting.API.SchemaCache',
       tech: ['.NET 8', 'ASP.NET Core', 'MongoDB Driver', 'Entity Framework Core', 'Azure.Messaging.ServiceBus'],
-      azure: { resource: 'Container App', name: 'ca-schemacache-{env}-001', sku: 'Consumption', region: 'Canada Central' },
+      azure: { resource: 'Container App', name: 'ca-centralschema-dev-001', sku: 'Consumption', region: 'Canada Central' },
       endpoints: [
         'GET /api/schemas/{carrierId} - Get schema bundle for carrier',
         'GET /api/schemas/{carrierId}/fields - Get field definitions',
@@ -413,7 +413,7 @@ window.ARCH_DATA = {
     cosmos_db: {
       description: 'Azure CosmosDB with MongoDB API used as the primary document store for quotes and schema cache bundles. Shared across Quote Management and Schema Cache services.',
       tech: ['Azure CosmosDB', 'MongoDB API 4.2', 'RU-based throughput'],
-      azure: { resource: 'Cosmos DB', name: 'cosdb-ratingplatform-{env}-001', sku: 'MongoDB 7.0', region: 'Canada Central' },
+      azure: { resource: 'Cosmos DB', name: 'cosdb-quotemanagement-dev-001', sku: 'MongoDB 7.0', region: 'Canada Central' },
       team: 'DevOps',
       collections: ['quotes', 'schema-bundles', 'rating-results']
     },
@@ -421,14 +421,14 @@ window.ARCH_DATA = {
     azure_sql: {
       description: 'Azure SQL Database storing relational rating rule definitions, carrier configurations, and platform metadata. Source of truth for schema data that gets synced to CosmosDB.',
       tech: ['Azure SQL', 'SQL Server 2022', 'Entity Framework Core'],
-      azure: { resource: 'SQL Server', name: 'sqlsrv-ratingplatform-{env}-001', sku: 'S0 (10GB)', region: 'Canada Central' },
+      azure: { resource: 'SQL Server', name: 'sqlsrv-ratingplatform-dev-001', sku: 'S0 (10GB)', region: 'Canada Central' },
       team: 'DevOps'
     },
 
     blob_storage: {
       description: 'Azure Blob Storage used for archiving rating request/response payloads. The orchestrator stores JSON request copies; the carrier connector stores raw CSIO XML exchanges.',
       tech: ['Azure Blob Storage', 'Hot tier'],
-      azure: { resource: 'Storage Account', name: 'strratingplatform{env}1', sku: 'Standard LRS', region: 'Canada Central' },
+      azure: { resource: 'Storage Account', name: 'strvlratingplatformdev1', sku: 'Standard LRS', region: 'Canada Central' },
       team: 'DevOps',
       containers: ['rating-requests', 'rating-responses', 'carrier-xml']
     },
@@ -436,7 +436,7 @@ window.ARCH_DATA = {
     key_vault: {
       description: 'Azure Key Vault storing secrets, certificates, and connection strings used by all platform services. Includes carrier OAuth2 credentials, Service Bus connection strings, and database keys.',
       tech: ['Azure Key Vault', 'RBAC', 'Managed Identity'],
-      azure: { resource: 'Key Vault', name: 'kvratingplatform{env}001', sku: 'Standard', region: 'Canada Central' },
+      azure: { resource: 'Key Vault', name: 'kvratingplatformdev001', sku: 'Standard', region: 'Canada Central' },
       team: 'DevOps'
     },
 
